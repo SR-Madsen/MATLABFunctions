@@ -1,0 +1,1 @@
+	function [R1, R2, C1, C2] = S_K_LPF(C1,C2,wo,Q,u)	syms R1 R2	f1=wo^2-1/R1/R2/C1/C2;	f2=wo/Q-1/R1/C1-1/R2/C1-1/R2/C2+u/R2/C2;	RES=solve(f1,f2);	R1=vpa(RES.R1,5);	R2=vpa(RES.R2,5);			

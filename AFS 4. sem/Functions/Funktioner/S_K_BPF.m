@@ -1,0 +1,1 @@
+	function [Ra,Rb,R1,R2,R3,C1,C2,u] = S_K_BPF(Ra,R3,C1,C2,wo,Q,G)	syms R1 R2 u	f1=wo^2-(R1+R2)/R1/R2/R3/C1/C2==0;	f2=wo/Q-1/R1/C1-1/R3/C2-1/R3/C1-1/R2/C1+u/R2/C1==0;	f3=G*wo/Q-u/R1/C1==0;	RES=solve(f1,f2,f3);	R1=vpa(RES.R1);	R2=vpa(RES.R2);	u=vpa(RES.u);	Rb=(u-1)*Ra;		

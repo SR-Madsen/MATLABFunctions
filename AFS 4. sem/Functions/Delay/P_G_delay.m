@@ -1,0 +1,1 @@
+	function P_G_delay(num,den,Wmin,Wmax,N)	w=logspace(Wmin,Wmax,N);	h=freqs(num,den,w);	mag=abs(h);	phase=unwrap(angle(h));	phasedeg=phase/pi*180;	PD = -phase./w;	GD = -gradient(phase,w);	plot(w,PD,'b',w,GD,'r')	semilogx(w,PD,w,GD)	xlabel('Vinkelfrekvens [r/s]'), ylabel('sek.')	ylabel('sek. blå: "Phase Delay" rød: "Group Delay"')	

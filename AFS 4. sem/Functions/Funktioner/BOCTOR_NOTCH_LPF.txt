@@ -1,0 +1,166 @@
+>> R24=R2*R4/(R2+R4)
+ 
+R24 =
+ 
+(R2*R4)/(R2 + R4)
+ 
+>> simplify(R24)
+ 
+ans =
+ 
+(R2*R4)/(R2 + R4)
+ 
+>> simplifyfraction(R24)
+Undefined function 'simplifyfraction' for input arguments of type 'sym'.
+ 
+Did you mean:
+>> simplifyFraction(R24)
+ 
+ans =
+ 
+(R2*R4)/(R2 + R4)
+ 
+>> wo=sqrt(1/R4/R6/C1/C2)
+ 
+wo =
+ 
+(1/(C1*C2*R4*R6))^(1/2)
+ 
+>> wz=(R1+R24+R6)/R1/R24/R6/C1/C2
+ 
+wz =
+ 
+((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4)))/(C1*C2*R1*R2*R4*R6)
+ 
+>> wz=sqrt(R1+R24+R6)/R1/R24/R6/C1/C2
+ 
+wz =
+ 
+((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4))^(1/2))/(C1*C2*R1*R2*R4*R6)
+ 
+>> simplify(wz/wo)
+ 
+ans =
+ 
+((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4))^(1/2))/(C1*C2*R1*R2*R4*R6*(1/(C1*C2*R4*R6))^(1/2))
+ 
+>> simplify(wz^2/wo^2)
+ 
+ans =
+ 
+((R2 + R4)^2*(R1 + R6 + (R2*R4)/(R2 + R4)))/(C1*C2*R1^2*R2^2*R4*R6)
+ 
+>> wo2=1/R4/R6/C1/C2
+ 
+wo2 =
+ 
+1/(C1*C2*R4*R6)
+ 
+>> wz2=(R1+R24+R6)/R1/R24/R6/C1/C2
+ 
+wz2 =
+ 
+((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4)))/(C1*C2*R1*R2*R4*R6)
+ 
+>> simplify(wz2/wo2)
+ 
+ans =
+ 
+((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4)))/(R1*R2)
+ 
+>> simplifyFraction(wz2/wo2)
+ 
+ans =
+ 
+(R1*R2 + R1*R4 + R2*R4 + R2*R6 + R4*R6)/(R1*R2)
+ 
+>> syms woQ
+>> woQ=(1/R6/C2+(R2+R4)/R2/R4/C2)
+ 
+woQ =
+ 
+1/(C2*R6) + (R2 + R4)/(C2*R2*R4)
+
+
+
+
+-----------------------------------
+syms R1 R2 R3 R4 R5 R6 R24 C1 C2 Q wz wo woQ Ho
+
+>> R24=R2*R4(R2+R4)
+
+>> f1=wo-sqrt(1/R4/R6/C1/C2)
+ 
+f1 =
+ 
+0
+ 
+>> f2=woQ-1/R6/C2-(R2+R4)/R2/R4/C2
+ 
+f2 =
+ 
+0
+ 
+>> f3=woz-sqrt((R1+R2*R4/(R2+R4)+R6)/R1/(R2*R4/(R2+R4))/R6/C1/C2)
+Undefined function or variable 'woz'.
+ 
+>> f3=wz-sqrt((R1+R2*R4/(R2+R4)+R6)/R1/(R2*R4/(R2+R4))/R6/C1/C2)
+ 
+f3 =
+ 
+((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4))^(1/2))/(C1*C2*R1*R2*R4*R6) - (((R2 + R4)*(R1 + R6 + (R2*R4)/(R2 + R4)))/(C1*C2*R1*R2*R4*R6))^(1/2)
+ 
+>> Ho
+Undefined function or variable 'Ho'.
+ 
+>> syms Ho
+>> f4=Ho-R5/(R3+R5)*(1+R4/R2+R4/R1+R6/R1+R4*R6/R1/R2)
+ 
+f4 =
+ 
+Ho - (R5*(R4/R1 + R4/R2 + R6/R1 + (R4*R6)/(R1*R2) + 1))/(R3 + R5)
+ 
+>> wo=sqrt(3.214092)
+
+wo =
+
+    1.7928
+
+>> woQ
+ 
+woQ =
+ 
+1/(C2*R6) + (R2 + R4)/(C2*R2*R4)
+ 
+>> wz=sqrt(7.464102)
+
+wz =
+
+    2.7321
+
+>> woQ=1.686887
+
+woQ =
+
+    1.6869
+
+>> C1=0.1
+
+C1 =
+
+    0.1000
+
+>> R6=2
+
+R6 =
+
+     2
+
+	 >> f5=1/R6/C2+(R2+R4)/R2/R4/C2+1/R1/C1-R3/R5/R6/C1
+ 
+f5 =
+ 
+1/(2*C2) - 5*R3 + 10/R1 + (R2 + R4)/(C2*R2*R4)
+	 
+
+ (R6 + 1/(C1^2*C2^2*R6*wo^4*(1/(C1*C2*wo^2*(R6 - woQ/(C1*wo^2) + 1/(C1*C2*R6*wo^2))) - 1/(C1*C2*R6*wo^2))*(R6 - woQ/(C1*wo^2) + 1/(C1*C2*R6*wo^2))))/(wz^2/(C1*C2*wo^4*(1/(C1*C2*wo^2*(R6 - woQ/(C1*wo^2) + 1/(C1*C2*R6*wo^2))) - 1/(C1*C2*R6*wo^2))*(R6 - woQ/(C1*wo^2) + 1/(C1*C2*R6*wo^2))) - 1)

@@ -1,0 +1,1 @@
+	function [R1, R2, R4, R5, R6] = F_T(R,R3,C1,C2,a2,a1,a0,b1,b0)	syms R1 R2 R4 R5 R6	eqt1=a2-R/R5==0;	eqt2=a1-1/R1/C1*(R/R5-R1/R4)==0;	eqt3=a0-1/R3/R6/C1/C2==0;	eqn1=b1-1/R1/C1==0;	eqn2=b0-1/R2/R3/C1/C2==0;	RES=solve(eqt1,eqt2,eqt3,eqn1,eqn2);	R1=vpa(RES.R1,5);	R2=vpa(RES.R2,5);	R4=vpa(RES.R4,5);	R5=vpa(RES.R5,5);	R6=vpa(RES.R6,5);			
