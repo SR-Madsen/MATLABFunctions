@@ -36,7 +36,7 @@ T_JA_buck = P_diss_buck * Rth_JA_buck
 T_JC_buck = P_diss_buck * Rth_JC_buck
 
 %% Power Dissipation for PoE Converter
-P_o_PoE = 7.5; % [W] Power Consumption of Wireless Access Point
+P_o_PoE = 24*0.3; % [W] Power Consumption of Wireless Access Point
 eta_PoE = 0.9;
 P_in_PoE = P_o_PoE/eta_PoE
 P_diss_PoE = P_in_PoE * (1-eta_PoE)
@@ -109,23 +109,21 @@ P_Shunts = [P_LVS_Shunt(1) + P_RTDS_Shunt + P_Brake_Shunt; P_LVS_Shunt(2) ...
 
 %% Fuses Power Dissipation
 P_Fuse_SC_2A = Opto_LVS * 55.6*10^-3 .* [I_2Opto; I_2Opto/2].^2;
-P_Fuse_LV_10A = 7.42*10^-3 .* (sum(I_PFET1,2) + sum(I_PFET4,2)).^2;
-P_Fuse_LV_15A = 4.58*10^-3 .* (sum(I_PFET2,2) + sum(I_PFET3,2)).^2;
+P_Fuse_SensNet_2A = 37.3*10^-3 .* I_PFET3(:,1);
+P_Fuse_LV_15A = (7.42*10^-3 .* (sum(I_PFET1,2) + sum(I_PFET4,2)).^2) + (4.58*10^-3 .* (sum(I_PFET2,2) + sum(I_PFET3,2)).^2);
 P_Fuse_ACT_375mA = (0.4518 * (8 * 10^-3)^2) + (0.4518 * (60 * 10^-3)^2);
 P_Fuse_24V_1A = 77.6 * 10^-3 .* [1; 0.7*1].^2;
 P_Fuse_Choke_7A = 9.2 * 10^-3 .* [5; 0.7*5].^2;
 P_Fuse_12V_375mA = 0.4518 .* [0.1; 0.1].^2;
 P_Fuse_5V_5A = 12.7*10^-3 .* [2; 2].^2;
 P_Fuse_3V3_5A = 12.7*10^-3 .* [1; 1].^2;
-P_Fuse_5VPico_2A = 37.3*10^-3 .* [1; 1].^2;
 P_Fuse_5VSens_1A = 77.6*10^-3 .* [0.3; 0.3].^2;
-P_Fuse_3V3Pico_2A = 37.3*10^-3 .* [0.3; 0.3].^2;
 P_Fuse_CMC_10A = 3 * (5.8*10^-3 .* [20/3; 0.7*20/3].^2);
 
-P_Fuses = P_Fuse_SC_2A + P_Fuse_LV_10A + P_Fuse_LV_15A + P_Fuse_ACT_375mA + ...
+P_Fuses = P_Fuse_SC_2A + P_Fuse_SensNet_2A + P_Fuse_LV_15A + P_Fuse_ACT_375mA + ...
     P_Fuse_24V_1A + P_Fuse_Choke_7A + P_Fuse_12V_375mA + P_Fuse_5V_5A + P_Fuse_3V3_5A + ...
-    P_Fuse_5VPico_2A + P_Fuse_5VSens_1A + componentP_Fuse_3V3Pico_2A + P_Fuse_CMC_10A
-componentcomponentcomponentcomponent
+    P_Fuse_5VSens_1A + P_Fuse_CMC_10A
+
 %% Power Consumption Calculations
 P_diss = P_diss_12V + P_diss_buck + P_diss_PoE + P_diss_PFET + P_dist + ...
     P_DV + P_exp_3V3 + P_exp_5V + P_pico_3V3 + P_pico_5V + P_SD + ...
@@ -133,13 +131,13 @@ P_diss = P_diss_12V + P_diss_buck + P_diss_PoE + P_diss_PFET + P_dist + ...
 
 c_P = 1.012; % [J/gK] Air specific heat (typical room)
 rho = 1190; % [g/m3] Air density (50% humidity)
-A = 0.25 * 0.16; % [m] Area of case
-h = 0.090; % [m] Height of case
+A = (0.246 * 0.171) - (0.013^2 * pi); % [m] Internal area of case, minus rounded corners
+h = 0.057; % [m] Internal height of case
 m_air = rho * A * h; % [g] Mass of air
 
 % Energy to heat the case a critical amount (30 degrees Celcius)
-T_delta = 30 % [C]
-U = (c_P * m_air * T_delta) * 1000 % [J]
+T_delta = 30; % [C]
+U = (c_P * m_air * T_delta) * 1000; % [J]
 
 % How long will this take with the power dissipation of the PCB?
 %t_delta = U ./ P_diss % [s]

@@ -19,7 +19,7 @@ OutputVoltage = SupplyVoltage * SeriesRes ./ (SeriesRes + NTCResistance);
 % -65,4 + 43,1 * T - 11,6 * T^2 + 1,68 * T^3
 
 % Perfect equation of temperature as a function of voltage above 30 degrees
-% -29102 + 19644 * T - 4424 * T^2 + 333 * T^3
+% -29104 + 19644 * T - 4424 * T^2 + 333 * T^3
 
 %% Inaccuracy due to NTC tolerance
 % NTC inaccuracy assumed constant 1.4 C under 25 degrees and linear from 25
