@@ -1,3 +1,5 @@
+% This script contains calculations on the NTC accuracy to find the
+% deviation across the entire temperature range.
 %% Initialization and Bosch NTC M12 characteristics
 clear, close all, clc;
 

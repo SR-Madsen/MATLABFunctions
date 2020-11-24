@@ -1,3 +1,5 @@
+% This script calculates the power dissipated within the Master Controller
+% enclosure from all sources, and calculates the resulting heat.
 %% Setup
 clc, clear, close all;
 
