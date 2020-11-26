@@ -1,6 +1,5 @@
 % This script calculates and graphically shows the inaccuracies for an NTC
 % when placed high-side and low-side.
-
 %% Setup
 clear, close all, clc;
 

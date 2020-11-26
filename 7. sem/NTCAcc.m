@@ -41,19 +41,50 @@ disp('Inaccuracy due to NTC:')
 NTCInacc(3:end-5) % In degrees
 
 %% Inaccuracy due to equation
+EquationTemp = 1:length(NTCTemp);
 EquationInacc = 1:length(NTCTemp);
 for i = 1:length(NTCTemp)
     if NTCTemp(i) < 40
-        EquationInacc(i) = (19.8 * OutputVoltage(i) - 52.3) - NTCTemp(i);
-        %EquationInacc(i) = (-35 + 6.11 * OutputVoltage(i) + 2.46 * OutputVoltage(i)^2) - NTCTemp(i);
+        %EquationTemp(i) = (19.8 * OutputVoltage(i) - 52.3);
+        EquationTemp(i) = (-35 + 6.11 * OutputVoltage(i) + 2.46 * OutputVoltage(i)^2);
+        EquationInacc(i) = EquationTemp(i) - NTCTemp(i);
     else
-        EquationInacc(i) = (2728 - 1261 * OutputVoltage(i) + 148 * OutputVoltage(i)^2) - NTCTemp(i);
-        %EquationInacc(i) = (-29104 + 19644 * OutputVoltage(i) - 4424 * OutputVoltage(i)^2 + 333 * OutputVoltage(i)^3) - NTCTemp(i);
+        %EquationTemp(i) = (2728 - 1261 * OutputVoltage(i) + 148 * OutputVoltage(i)^2);
+        EquationTemp(i) = (-29104 + 19644 * OutputVoltage(i) - 4424 * OutputVoltage(i)^2 + 333 * OutputVoltage(i)^3);
+        EquationInacc(i) = EquationTemp(i) - NTCTemp(i);
     end
 end
 
 disp('Inaccuracy due to equation:')
 EquationInacc(3:end-5) % In degrees
+
+% Show actual value and regression line on same plot
+figure(1)
+plot(OutputVoltage(3:8), NTCTemp(3:8), '^', 'LineWidth', 2)
+hold on
+plot(OutputVoltage(3:8), EquationTemp(3:8), ':', 'LineWidth', 2)
+fig1 = gca;
+fig1.FontSize = 14;
+grid on
+title('Temperature as a function of voltage with regression line below 30 \circC', 'FontSize', 22)
+xlabel('Voltage [V]', 'FontSize', 18)
+ylabel('Temperature [\circC]', 'FontSize', 18)
+lgd1 = legend('Actual value','Regression equation', 'Location', 'northwest');
+lgd1.FontSize = 18;
+hold off
+
+figure(2)
+plot(OutputVoltage(9:15), NTCTemp(9:15), '^', 'LineWidth', 2)
+hold on
+plot(OutputVoltage(9:15), EquationTemp(9:15), ':', 'LineWidth', 2)
+fig2 = gca;
+fig2.FontSize = 14;
+grid on
+title('Temperature as a function of voltage with regression line above 30 \circC', 'FontSize', 22)
+xlabel('Voltage [V]', 'FontSize', 18)
+ylabel('Temperature [\circC]', 'FontSize', 18)
+lgd2 = legend('Actual value', 'Regression equation', 'Location', 'northwest');
+lgd2.FontSize = 18;
 
 %% Inaccuracy due to ADC
 ADCLSBAcc = 11; % 11 LSB inaccuracy
@@ -99,8 +130,11 @@ ResInacc(3:end-5) % In degrees
 TotalInacc = abs(NTCInacc(3:end-5)) + abs(EquationInacc(3:end-5)) + abs(ADCInacc(3:end-5)) + abs(ResInacc(3:end-5))
 %TotalInaccNonAbs = NTCInacc(3:end-5) + EquationInacc(3:end-5) + ADCInacc(3:end-5) + ResInacc(3:end-5)
 
+figure(3)
 plot(NTCTemp(3:end-5), TotalInacc(1:end), 'LineWidth', 2)
+fig3 = gca;
+fig3.FontSize = 14;
 grid on
-title('Total temperature variance due to all inaccuracies', 'FontSize', 20)
-xlabel('Temperature [°C]', 'FontSize', 16)
-ylabel('Inaccuracy [°C]', 'FontSize', 16)
+title('Total temperature variance due to all inaccuracies, complex equations', 'FontSize', 22)
+xlabel('Temperature [°C]', 'FontSize', 18)
+ylabel('Inaccuracy [°C]', 'FontSize', 18)

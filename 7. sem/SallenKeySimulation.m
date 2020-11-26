@@ -9,9 +9,11 @@ SDvolt = SDvolt(2:end);
 
 figure(1)
 plot(SDtime, SDvolt, 'LineWidth', 2)
-title('Designed Sallen-Key filter response to 1 V step', 'FontSize', 20)
-xlabel('Time [s]', 'FontSize', 16)
-ylabel('Voltage [V]', 'FontSize', 16)
+fig1 = gca;
+fig1.FontSize = 14;
+title('Designed Sallen-Key filter response to 1 V step', 'FontSize', 22)
+xlabel('Time [s]', 'FontSize', 18)
+ylabel('Voltage [V]', 'FontSize', 18)
 grid on
 
 TF = readmatrix('SK_TF.csv'); % Same
@@ -25,7 +27,9 @@ TFampRC = TFampRC(2:end);
 
 figure(2)
 semilogx(TFfreq, TFampOA, TFfreq, TFampRC, 'LineWidth', 2)
-title('Designed Sallen-Key filter transfer function with and without subsequent RC filter', 'FontSize', 20)
-xlabel('Frequency [Hz]', 'FontSize', 16)
-ylabel('Amplitude [dB]', 'FontSize', 16)
+fig2 = gca;
+fig2.FontSize = 14;
+title('Designed Sallen-Key filter transfer function with and without subsequent RC filter', 'FontSize', 22)
+xlabel('Frequency [Hz]', 'FontSize', 18)
+ylabel('Amplitude [dB]', 'FontSize', 18)
 grid on
