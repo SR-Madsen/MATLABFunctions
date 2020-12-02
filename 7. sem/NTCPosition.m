@@ -80,8 +80,10 @@ rel_acc_ADC_low = V_ADC_low ./ V_nom_low;
 
 figure(4)
 plot(T, rel_acc_ADC_high, T, rel_acc_ADC_low, 'LineWidth', 2)
+fig = gca;
+fig.FontSize = 14;
 grid on
-title('Relative accuracy of min-max tolerances with ADC inaccuracy as a function of temperature')
+title('Relative accuracy of min-max tolerances with ADC inaccuracy as a function of temperature', 'FontSize', 20)
 legend('High-side NTC', 'Low-side NTC', 'Location', 'northwest')
-xlabel('Temperature [C]')
-ylabel('Relative accuracy')
+xlabel('Temperature [C]', 'FontSize', 18)
+ylabel('Relative accuracy', 'FontSize', 18)
