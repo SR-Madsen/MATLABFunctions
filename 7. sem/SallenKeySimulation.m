@@ -32,4 +32,6 @@ fig2.FontSize = 14;
 title('Designed Sallen-Key filter transfer function with and without subsequent RC filter', 'FontSize', 22)
 xlabel('Frequency [Hz]', 'FontSize', 18)
 ylabel('Amplitude [dB]', 'FontSize', 18)
+lgd = legend('Without RC filter', 'With RC filter', 'Location', 'northeast')
+lgd.FontSize = 18
 grid on
