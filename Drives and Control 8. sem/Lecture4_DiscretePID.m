@@ -58,15 +58,27 @@ margin(Dpidz*Gpz)
 % The plant transfer function is G_p = 10 / (s^2 + 3 * s + 4)
 % The characteristic equation will be alpha(s) = (s + 2)^3
 
-Gpn = [10];
-Gpd = [1 3 4];
+Gpn = [10]; % A(s)
+Gpd = [1 3 4]; % B(s)
 
 Gp = tf(Gpn, Gpd);
 T = 0.1; % Sampling time
 
-% Constants
-Kp = 0.8;
-Ki = 0.8;
-Kd = 0.3;
+% Expanding the characteristic equation:
+syms s
+alpha = expand((s+2)^3)
+
+% Comparing the expanded equation with expected values of:
+% (s^2 + 3s + 4) * s + (Kds^2 + Kps + Ki) * A(s) = s^3 + 3 * s^2 + 4 * s + 10 * Kd * s^2 + 10 * Kp * s + 10 * Ki
+% = s^3 + (3 + 10 * Kd) * s^2 + (4 + 10 * Kp) * s + 10 * Ki
+% Results in:
+% 3 + 10 * Kd = 6
+% 4 + 10 * Kp = 12
+% 10 * Ki = 8
+
+% The values are then calculated as
+Kd = (6-3)/10
+Kp = (12-4)/10
+Ki = 8/10
 
 %sim('Lecture4_DiscretePID')
