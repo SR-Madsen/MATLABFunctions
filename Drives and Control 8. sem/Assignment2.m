@@ -1,7 +1,7 @@
 clear, close all, clc
 
-%% Assignment 2:
-% Part 1: Design a dq model of the PMSM in Simulink
+% Assignment 2:
+%% Part 1: Design a dq model of the PMSM in Simulink
 % Datasheet:
 Lq   = 1*10^-3; % H
 Ld   = 1*10^-3; % H
@@ -14,28 +14,25 @@ J    = 2      ; % kg*m²
 % PowerPoint. The d-part is found from the equation in same PowerPoint:
 % vd = Rd*id + Ld * did/dt - Lq*w*iq
 
-% Part 2: Design and implement PI controllers for the system and simulate a
-% torque step response.
-
-% notes: try different delays, bandwidths etc.
+%% Part 2: Design and implement analog PI controllers for the system and simulate a
+% torque step response. Try different bandwidths for the system.
 
 wc = 1000; % Resulting bandwidth: ~1500 rad/s
-T = 1/((20*wc)/(2*pi));
 
 % The dynamic models for dq are (roughly):
-Gd = tf([1], [Ld R]);
-Gq = tf([1], [Lq R]);
+Gd_num = [1];
+Gd_den = [Ld R];
+Gd = tf(Gd_num, Gd_den);
+
+Gq_num = [1];
+Gq_den = [Lq R];
+Gq = tf(Gq_num, Gq_den);
 
 % As the models are identical for this assignment, just one transfer
 % function needs to be found for the PI Controller, here using i_d.
-% Map from continuous time into discrete time
-Gdz = c2d(Gd, T);
-
-% Make a bilinear transformation by Tustin mapping back into continuous
-Gdw = d2c(Gdz, 'tustin');
-[gain, phase] = bode(Gdw, wc);
+[gain, phase] = bode(Gd, wc);
 figure(1)
-margin(Gdw) % Plot of i_d model
+margin(Gd) % Plot of i_d model
 
 % Design the PI controller in the continuous time
 % The proportional part is solely a constant
@@ -45,20 +42,71 @@ kp = 1/gain; % Ensures crossover frequency is as wanted
 ki = 1; % I part's steady-state value, should not impact the system
 wi = wc/10; % I part's natural frequency, should be around a decade lower than system's frequency due to phase impact
 ti = 1/wi; % I part's time constant
-Dps = tf([ti 1], [ti 0]);
+
+Dps_num = [ti 1];
+Dps_den = [ti 0];
+Dps = tf(Dps_num, Dps_den);
 
 % The resulting PI controller is then:
 Ddpis = kp * Dps;
 
 % Bode plot of plant with PI controller
 figure(2)
-[gain, phase] = bode(Gdw*kp*Dps, wc);
-margin(Gdw*Ddpis)
+[gain, phase] = bode(Gd*Ddpis, wc);
+margin(Gd*Ddpis)
 
-% This must be transferred to the z-domain by Tustin
-Ddpiz = c2d(Ddpis, T, 'tustin')
+% Notes on simulation:
+% Different cross-frequencies (and thus bandwidths) were tested.
+% Results:
+% wc = 1000  ==>  
+% wc = 250   ==>
+% wc = 2000  ==>
 
-% Variables for use in Simulink:
-Kp = kp;
-Ti = ti;
-Ki = Kp/ti;
+%% Part 3: Design and implement a digital PI controller and simulate torque step response.
+% Try different design approaches (Nyquist, Tustin, Pole Placement) and
+% sample times.
+
+wc = 1000; % Resulting bandwidth: ~1500 rad/s
+T = 1/((20*wc)/(2*pi));
+
+% The dq models are identical, but mapped into the discrete domain.
+Gdz = c2d(Gd, T);
+Gdw = d2c(Gdz, 'Tustin');
+
+figure(3)
+[gain, phase] = bode(Gdw, wc);
+margin(Gdw)
+
+% Design the PI controller in the continuous time
+% The proportional part is solely a constant
+kp = 1/gain; % Ensures crossover frequency is as wanted
+
+% The integral part is then calculated
+ki = 1; % I part's steady-state value, should not impact the system
+wi = wc/10; % I part's natural frequency, should be around a decade lower than system's frequency due to phase impact
+ti = 1/wi; % I part's time constant
+
+Dps_num = [ti 1];
+Dps_den = [ti 0];
+Dps = tf(Dps_num, Dps_den);
+
+% The resulting PI controller is then found and mapped into the discrete
+% domain
+Ddpis = kp * Dps;
+Ddpiz = c2d(Ddpis, T, 'Tustin')
+
+% Bode plot of plant with digital controller
+figure(4)
+[gain, phase] = bode(Ddpiz*Gdz,wc);
+margin(Ddpiz*Gdz)
+
+% Notes on simulation:
+% Different sample times and design approaches were tested.
+% Results:
+% Tustin
+% Nyquist
+% Pole Placement?
+% T = wc
+% T = 5*wc
+% T = 20*wc
+% T = 50*wc
