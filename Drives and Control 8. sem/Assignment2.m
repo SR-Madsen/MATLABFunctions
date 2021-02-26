@@ -17,7 +17,9 @@ J    = 2      ; % kg*m²
 %% Part 2: Design and implement analog PI controllers for the system and simulate a
 % torque step response. Try different bandwidths for the system.
 
-wc = 1000; % Resulting bandwidth: ~1500 rad/s
+wc = 50; % Resulting bandwidth: 1.5 * wc rad/s
+wc1 = 250;
+wc2 = 1000;
 
 % The dynamic models for dq are (roughly):
 Gd_num = [1];
@@ -43,31 +45,39 @@ ki = 1; % I part's steady-state value, should not impact the system
 wi = wc/10; % I part's natural frequency, should be around a decade lower than system's frequency due to phase impact
 ti = 1/wi; % I part's time constant
 
-Dps_num = [ti 1];
+Dps_num = ki*[ti 1];
 Dps_den = [ti 0];
 Dps = tf(Dps_num, Dps_den);
 
 % The resulting PI controller is then:
 Ddpis = kp * Dps;
 
-% Bode plot of plant with PI controller
+% Calculate new gain and phase of plant with PI controller
+[gain, phase] = bode(Gd*Ddpis, wc);
+
+% Change gain to adjust perfectly
+kp = kp * 1/gain;
+Ddpis = kp * Dps;
+
+% Bode plot of final plant and PI controller
 figure(2)
 [gain, phase] = bode(Gd*Ddpis, wc);
 margin(Gd*Ddpis)
 
-% Notes on simulation:
-% Different cross-frequencies (and thus bandwidths) were tested.
-% Results:
-% wc = 1000  ==>  
-% wc = 250   ==>
-% wc = 2000  ==>
+% Values for Simulink:
+Kp = kp;
+Ki = kp/ti;
+Kp1 = Kp;
+Kp2 = Kp;
+Ki1 = kp/(1/(wc1/10));
+Ki2 = kp/(1/(wc2/10));
 
 %% Part 3: Design and implement a digital PI controller and simulate torque step response.
 % Try different design approaches (Nyquist, Tustin, Pole Placement) and
 % sample times.
 
 wc = 1000; % Resulting bandwidth: ~1500 rad/s
-T = 1/((20*wc)/(2*pi));
+T = 1/((25*wc)/(2*pi));
 
 % The dq models are identical, but mapped into the discrete domain.
 Gdz = c2d(Gd, T);
