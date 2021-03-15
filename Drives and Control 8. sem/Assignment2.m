@@ -235,7 +235,10 @@ Kp = kp/2;
 Ki = kp/ti;
 
 % Pole Placement values
-Kp_pole = 0.018;
+%(1500+1000*K_p) = 45
+%1000*K_p = 45-1500
+%K_p = (45-1500)/1000
+Kp_pole = (45-1500)/1000; %0.018;
 Ki_pole = 0.5062;
 
 %Kp = Kp_pole;
