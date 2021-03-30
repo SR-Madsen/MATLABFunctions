@@ -28,6 +28,6 @@ alpha_sys = det(s*eye(n)-[A-B*[K1 K2], B*Ki; -C, 0]);
 A_mark = [A, [0; 0]; -C, 0]
 B_mark = [B; 0]
 K = acker(A_mark, B_mark, [s_p, s_p, s_p])
-K12 = [K(1) K(2)]
+K12 = [K(1) K(2)];
+Ki = -K(3);
 % Output is as follows: K1, K2, Ki
-C_mark = [C 0]
