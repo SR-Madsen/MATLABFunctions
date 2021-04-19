@@ -48,19 +48,20 @@ R_fet = 0.01; % [Ohm]
 G_fet = 1e-8; % [1/Ohm]
 
 %% Controller Design:
-% A digital PI and a digital PID controller will be designed.
+% A digital PI controller will be designed in two different ways.
 % The DC motor system to be controlled has the transfer function:
 G_DC = tf([1], [La Ra]);
 
-% The maximum frequency of the DC motor is:
-f_motor_max = 5600/60;
-% Thus the sampling frequency should be:
-f_s = 25 * (100 * 2 * pi);
+% The switching frequency is
+f_sw = 1000;
+
+% The sampling frequency is
+f_s = 40000;
 T_s = 1/f_s;
 
 % A higher cross-frequency will mostly result in better control, but is
 % also more difficult to attain. For testing, the following is used:
-f_c = 3 * f_motor_max;
+f_c = 100;
 w_c = 2*pi*f_c;
 
 % The DC motor model is mapped into the discrete domain and ZOH'd:
@@ -101,58 +102,4 @@ margin(G_DC_d*D_pi_z)
 
 % PI Controller values for Simulink:
 Kp_pi = kp;
-Ki_pi = kp/tau_i;
-
-
-
-% Now for the PID Controller:
-% To warrant the use of a derivative part, the cross-frequency is increased
-f_c = 15 * f_motor_max;
-w_c = 2*pi*f_c;
-
-% The DC motor model is used again to find cross-frequency gain:
-[gain, phase] = bode(G_DC_zoh, w_c);
-
-% This model is then used for designing the PID in the continuous domain.
-% Proportional gain is adjusted to hit the cross-frequency.
-kp = 1/gain;
-
-% The integrator is then designed.
-ki = 1; % Gain should not impact system
-tau_i = La/Ra; % If they are accurate, this is good. Else try wi = wc/10.
-%tau_i = 1/(w_c/10);
-
-% The transfer function is thus
-D_pi_num_s = (ki*[tau_i 1]);
-D_pi_den_s = [tau_i 0];
-D_pi_s = tf(D_pi_num_s, D_pi_den_s);
-
-% Re-calculate gain for accuracy
-[gain, phase] = bode(kp*D_pi_s*G_DC_zoh, w_c);
-kp = kp * 1/gain;
-D_pi_s = D_pi_s * kp;
-
-% The derivative is now designed
-% A phase boost of 30 degrees is chosen based on absolutely nothing. The
-% phase margin is very good as-is for the system,
-Fmax = 30;
-
-% The derivative part is then calculated
-alpha = (1 - sind(Fmax))/(1 + sind(Fmax));
-kd = sqrt(alpha);
-td = 1/(sqrt(alpha)*w_c);
-Dds = tf(kd * [td 1], [alpha*td 1]);
-
-% The resulting PID controller is then:
-D_pid = D_pi_s * Dds;
-
-% This must be transferred to the z-domain by Tustin
-D_pid_z = c2d(D_pid, T_s, 'Tustin');
-
-figure(3)
-margin(D_pid_z*G_DC_d)
-
-% PID Controller values for Simulink:
-Kp_pid = kp;
-Ki_pid = kp/tau_i;
-Kd_pid = kd;
+Ki_pi = ki/tau_i;
