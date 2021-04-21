@@ -35,33 +35,53 @@ Tf = 0.0042; % [Nm]
 % Ke =
 % Kv = 
 % Jr = 
+
 % Extra inertia load on setup
-JL = 0.001; % [kg m^2]
+rho_alu = 2700;
+rho_steel = 7800;
+r = 3/100;
+h = 1/100;
+mass_alu = r^2*pi*h*rho_alu;
+mass_steel = r^2*pi*h*rho_steel;
+
+JL = 1/2 * mass_steel * r^2; % [kg m^2]
 
 % Resistor for load motor
 RL = 10;
 
 % For simulation
 Vin = 24;
-D = 0.5;
+D = 1;
 R_fet = 0.01; % [Ohm]
 G_fet = 1e-8; % [1/Ohm]
 
 %% Controller Design:
 % A digital PI controller will be designed in two different ways.
 % The DC motor system to be controlled has the transfer function:
-G_DC = tf([1], [La Ra]);
+
+J = JL + 2 * Jr;
+
+A = [-2*Kv/J, Ke/J; -Ke/La, -Ra/La];
+B = [0; 1/La];
+C = [1, 0];
+D = 0;
+
+[num, den] = ss2tf(A,B,C,D)
+
+G_DC = tf(num,den);
+%figure(4)
+%step(G_DC)
 
 % The switching frequency is
 f_sw = 1000;
 
 % The sampling frequency is
-f_s = 40000;
-T_s = 1/f_s;
+%f_s = 40000;
+T_s = 50e-6;
 
 % A higher cross-frequency will mostly result in better control, but is
 % also more difficult to attain. For testing, the following is used:
-f_c = 100;
+f_c = 10;
 w_c = 2*pi*f_c;
 
 % The DC motor model is mapped into the discrete domain and ZOH'd:
@@ -81,24 +101,24 @@ kp = 1/gain;
 
 % The integrator is then designed.
 ki = 1; % Gain should not impact system
-tau_i = La/Ra; % If they are accurate, this is good. Else try wi = wc/10.
-%tau_i = 1/(w_c/10);
+%tau_i = La/Ra; % If they are accurate, this is good. Else try wi = wc/10.
+tau_i = 1/(w_c/25);
 
 % The transfer function is thus
 D_pi_num_s = (ki*[tau_i 1]);
 D_pi_den_s = [tau_i 0];
 D_pi_s = tf(D_pi_num_s, D_pi_den_s);
 
+figure(2)
+margin(G_DC_d*D_pi_z)
+
 % Re-calculate gain for accuracy
-[gain, phase] = bode(kp*D_pi_s*G_DC_zoh, w_c);
-kp = kp * 1/gain;
-D_pi_s = D_pi_s * kp;
+%[gain, phase] = bode(kp*D_pi_s*G_DC_zoh, w_c);
+%kp = kp * 1/gain;
+%D_pi_s = D_pi_s * kp;
 
 % Which is mapped into the discrete domain
 D_pi_z = c2d(D_pi_s, T_s, 'Tustin');
-
-figure(2)
-margin(G_DC_d*D_pi_z)
 
 % PI Controller values for Simulink:
 Kp_pi = kp;
