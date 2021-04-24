@@ -19,6 +19,7 @@ La = 0.00251; % [H]
 Kv = 2.6*10^-6; % [Nms/rad]
 Jr = 4.2*10^-6; % [kg m^2]
 Tf = 0.0042; % [Nm]
+%Tf = 0;
 
 % Ideas on how to measure:
 % Ra: Apply known voltage at known rotation. R = (V-Ke*rads)/I
@@ -32,7 +33,7 @@ Tf = 0.0042; % [Nm]
 % Frequencies [100 Hz, 120 Hz, 1 kHz, 10 kHz, 100 kHz]
 % La = [2.742e-3, 2.82e-3, 2.637e-3, 2.126e-3, 1.536e-3]
 % Ra = 
-% Ke =
+% Ke = 6.07/(1560/60*2*pi); 10.62/(2800/60*2*pi); = 0.0365;
 % Kv = 
 % Jr = 
 
@@ -44,7 +45,7 @@ h = 1/100;
 mass_alu = r^2*pi*h*rho_alu;
 mass_steel = r^2*pi*h*rho_steel;
 
-JL = 1/2 * mass_steel * r^2; % [kg m^2]
+JL = 1/2 * mass_alu * r^2; % [kg m^2]
 
 % Resistor for load motor
 RL = 10;
@@ -109,9 +110,6 @@ D_pi_num_s = (ki*[tau_i 1]);
 D_pi_den_s = [tau_i 0];
 D_pi_s = tf(D_pi_num_s, D_pi_den_s);
 
-figure(2)
-margin(G_DC_d*D_pi_z)
-
 % Re-calculate gain for accuracy
 %[gain, phase] = bode(kp*D_pi_s*G_DC_zoh, w_c);
 %kp = kp * 1/gain;
@@ -119,6 +117,13 @@ margin(G_DC_d*D_pi_z)
 
 % Which is mapped into the discrete domain
 D_pi_z = c2d(D_pi_s, T_s, 'Tustin');
+
+figure(2)
+margin(G_DC_d*D_pi_z)
+
+G_controlled = feedback(G_DC_d*D_pi_z, 1);
+figure(3)
+step(G_controlled)
 
 % PI Controller values for Simulink:
 Kp_pi = kp;
