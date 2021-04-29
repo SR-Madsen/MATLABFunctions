@@ -23,6 +23,7 @@ Tf = 0.0042; % [Nm]
 
 % Ideas on how to measure:
 % Ra: Apply known voltage at known rotation. R = (V-Ke*rads)/I
+%     OR apply known voltage when fixing motor. R = V/I.
 % La: Use an LCR meter
 % Ke: Rotate at known speed and measure the winding voltage
 % Kv: When using steady-state values, Kv = Ke * di/dw (d = delta)
@@ -32,18 +33,31 @@ Tf = 0.0042; % [Nm]
 % Measurements:
 % Frequencies [100 Hz, 120 Hz, 1 kHz, 10 kHz, 100 kHz]
 % La = [2.742e-3, 2.82e-3, 2.637e-3, 2.126e-3, 1.536e-3]
-% Ra = 
+% Ra = 1.92/0.83; 0.95/0.41; 2.39/1.06; = 2.3
 % Ke = 6.07/(1560/60*2*pi); 10.62/(2800/60*2*pi); = 0.0365;
-% Kv = 
+% Kv = Ke * ((0.161-0.118)/((3500-1000)/60*2*pi)) = 6e-6;
+%      OR Ke * ((0.161-0.149)/(3500-2450)/60*2*pi)) = 4e-6;
+%
+%   RPM = 1560 --> i = 0.260
+%   RPM = 2390 --> i = 0.310
+%
+%   RPM = 2890 --> i = 0.33
+%   RPM = 4490 --> i = 0.39
+%
+%   RPM = 1500 --> i = 0.25
+%   RPM = 2390 --> i = 0.3
+%
+%   RPM = 2890 --> i = 0.33
+%   RPM = 4490 --> i = 0.39
 % Jr = 
 
 % Extra inertia load on setup
 rho_alu = 2700;
-rho_steel = 7800;
+%rho_steel = 7800;
 r = 3/100;
 h = 1/100;
 mass_alu = r^2*pi*h*rho_alu;
-mass_steel = r^2*pi*h*rho_steel;
+%mass_steel = r^2*pi*h*rho_steel;
 
 JL = 1/2 * mass_alu * r^2; % [kg m^2]
 
@@ -74,10 +88,10 @@ G_DC = tf(num,den);
 %step(G_DC)
 
 % The switching frequency is
-f_sw = 1000;
+f_sw = 750;
 
 % The sampling frequency is
-%f_s = 40000;
+%f_s = 20000;
 T_s = 50e-6;
 
 % A higher cross-frequency will mostly result in better control, but is
