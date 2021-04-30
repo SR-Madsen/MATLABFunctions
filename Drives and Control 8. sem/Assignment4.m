@@ -41,8 +41,8 @@ Dd = D;
 [Ad_100, Bd_100] = c2d(A, B, T_100Hz);
 
 % The digital poles are then found
-z_p_1 = exp(1)^(s_p(1)*T_10Hz)
-z_p_2 = exp(1)^(s_p(1)*T_100Hz)
+z_p_1 = exp(s_p(1)*T_10Hz)
+z_p_2 = exp(s_p(1)*T_100Hz)
 
 % K-placement
 K_10 = acker(Ad_10_mark, Bd_10_mark, [z_p_1, z_p_1, z_p_1]);

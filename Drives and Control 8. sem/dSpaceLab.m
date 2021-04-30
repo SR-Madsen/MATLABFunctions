@@ -13,11 +13,11 @@ clear, close all, clc;
 % The simulation will be performed in SimScape (see dSpaceLab.slx)
 
 % The datasheet's DC-motor parameters:
-Ke = 0.0365; % [Vs/rad]
-Ra = 2.96; % [Ohm]
-La = 0.00251; % [H]
-Kv = 2.6*10^-6; % [Nms/rad]
-Jr = 4.2*10^-6; % [kg m^2]
+%Ke = 0.0365; % [Vs/rad]
+%Ra = 2.96; % [Ohm]
+%La = 0.00251; % [H]
+%Kv = 2.6*10^-6; % [Nms/rad]
+%Jr = 4.2*10^-6; % [kg m^2]
 Tf = 0.0042; % [Nm]
 %Tf = 0;
 
@@ -33,8 +33,11 @@ Tf = 0.0042; % [Nm]
 % Measurements:
 % Frequencies [100 Hz, 120 Hz, 1 kHz, 10 kHz, 100 kHz]
 % La = [2.742e-3, 2.82e-3, 2.637e-3, 2.126e-3, 1.536e-3]
+La = 2.637e-3
 % Ra = 1.92/0.83; 0.95/0.41; 2.39/1.06; = 2.3
+Ra = 1.92/0.83
 % Ke = 6.07/(1560/60*2*pi); 10.62/(2800/60*2*pi); = 0.0365;
+Ke = 6.07/(1560/60*2*pi)
 % Kv = Ke * ((0.161-0.118)/((3500-1000)/60*2*pi)) = 6e-6;
 %      OR Ke * ((0.161-0.149)/(3500-2450)/60*2*pi)) = 4e-6;
 %
@@ -49,7 +52,12 @@ Tf = 0.0042; % [Nm]
 %
 %   RPM = 2890 --> i = 0.33
 %   RPM = 4490 --> i = 0.39
-% Jr = 
+Kv = Ke * ((0.161-0.149)/((3500-2450)/60*2*pi))
+% Jr = tau/acc  --> tau = I * Ke = 2 * Ke, acc = deltaY/deltaX = 
+%                   ((1266.35-56.89)/60*2*pi)/(0.10005-0.02005)
+tau = 2 * Ke;
+acc = ((1266.35-56.89)/60*2*pi)/(0.10005-0.02005);
+J = tau/acc % TOTAL INTERTIA
 
 % Extra inertia load on setup
 rho_alu = 2700;
@@ -61,6 +69,8 @@ mass_alu = r^2*pi*h*rho_alu;
 
 JL = 1/2 * mass_alu * r^2; % [kg m^2]
 
+Jr = (J - JL)/2 % INERTIA FOR ONE MOTOR
+
 % Resistor for load motor
 RL = 10;
 
@@ -69,12 +79,12 @@ Vin = 24;
 D = 1;
 R_fet = 0.01; % [Ohm]
 G_fet = 1e-8; % [1/Ohm]
+T_calc = 50e-6;
+
 
 %% Controller Design:
 % A digital PI controller will be designed in two different ways.
 % The DC motor system to be controlled has the transfer function:
-
-J = JL + 2 * Jr;
 
 A = [-2*Kv/J, Ke/J; -Ke/La, -Ra/La];
 B = [0; 1/La];
@@ -91,8 +101,9 @@ G_DC = tf(num,den);
 f_sw = 750;
 
 % The sampling frequency is
-%f_s = 20000;
+f_s = 20000;
 T_s = 50e-6;
+
 
 % A higher cross-frequency will mostly result in better control, but is
 % also more difficult to attain. For testing, the following is used:
@@ -120,7 +131,7 @@ ki = 1; % Gain should not impact system
 tau_i = 1/(w_c/25);
 
 % The transfer function is thus
-D_pi_num_s = (ki*[tau_i 1]);
+D_pi_num_s = kp*(ki*[tau_i 1]);
 D_pi_den_s = [tau_i 0];
 D_pi_s = tf(D_pi_num_s, D_pi_den_s);
 
@@ -138,7 +149,27 @@ margin(G_DC_d*D_pi_z)
 G_controlled = feedback(G_DC_d*D_pi_z, 1);
 figure(3)
 step(G_controlled)
+%opt= stepDataOptions('StepAmplitude', 2000);
+%step(G_controlled, opt)
 
 % PI Controller values for Simulink:
 Kp_pi = kp;
 Ki_pi = ki/tau_i;
+
+
+% Calculation of PI Controller using LSF with integrator:
+T_settle = 0.1;
+n = 3;
+syms s_p;
+eq = T_settle == 1.5*(1+n)*-1/s_p;
+s_p = double(vpasolve(eq,s_p))
+z_p = exp(s_p*T_s)
+
+A_mark = [A [0; 0]; -C 0];
+B_mark = [B; 0];
+
+[Ad_mark, Bd_mark] = c2d(A_mark, B_mark, T_s);
+
+K_LSF = acker(Ad_mark, Bd_mark, [z_p, z_p, z_p]);
+K_LSF_i = -K_LSF(3)
+K_LSF_p = [K_LSF(2) K_LSF(1)]
