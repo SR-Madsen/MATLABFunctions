@@ -19,7 +19,7 @@ clear, close all, clc;
 %Kv = 2.6*10^-6; % [Nms/rad]
 %Jr = 4.2*10^-6; % [kg m^2]
 Tf = 0.0042; % [Nm]
-%Tf = 0;
+Tf = 0;
 
 % Ideas on how to measure:
 % Ra: Apply known voltage at known rotation. R = (V-Ke*rads)/I
@@ -77,7 +77,8 @@ RL = 10;
 
 % For simulation
 Vin = 24;
-D = 1;
+V_load = -5;
+D = 0.5;
 R_fet = 0.01; % [Ohm]
 G_fet = 1e-8; % [1/Ohm]
 T_calc = 50e-6;
@@ -86,17 +87,13 @@ T_calc = 50e-6;
 %% Controller Design:
 % A digital PI controller will be designed in two different ways.
 % The DC motor system to be controlled has the transfer function:
-
-A = [-2*Kv/J, Ke/J; -Ke/La, -Ra/La];
+A = [-2*Kv_motor/J, Ke/J; -Ke/La, -Ra/La];
 B = [0; 1/La];
 C = [1, 0];
 D = 0;
 
 [num, den] = ss2tf(A,B,C,D)
-
 G_DC = tf(num,den);
-%figure(4)
-%step(G_DC)
 
 % The switching frequency is
 f_sw = 750;
@@ -105,9 +102,9 @@ f_sw = 750;
 f_s = 20000;
 T_s = 50e-6;
 
-
-% A higher cross-frequency will mostly result in better control, but is
-% also more difficult to attain. For testing, the following is used:
+% A higher cross-frequency will mostly result in faster control, but is
+% also more difficult to attain and results in overshoot and undershoot.
+% For testing, the following is used:
 f_c = 10;
 w_c = 2*pi*f_c;
 
@@ -118,17 +115,19 @@ figure(1)
 [gain, phase] = bode(G_DC_zoh, w_c);
 margin(G_DC_zoh)
 
+figure(2)
+opt = stepDataOptions('StepAmplitude', 5);
+step(G_DC_zoh, opt)
+
 % This model is then used for designing the two controllers. These are
 % first designed in the continuous domain, and then later mapped.
 
-
-% First the PI Controller:
+% First the PI Controller is designed using bilinear transformation:
 % Proportional gain is adjusted to hit the cross-frequency.
 kp = 1/gain;
 
 % The integrator is then designed.
 ki = 1; % Gain should not impact system
-%tau_i = La/Ra; % If they are accurate, this is good. Else try wi = wc/10.
 tau_i = 1/(w_c/25);
 
 % The transfer function is thus
@@ -136,29 +135,25 @@ D_pi_num_s = kp*(ki*[tau_i 1]);
 D_pi_den_s = [tau_i 0];
 D_pi_s = tf(D_pi_num_s, D_pi_den_s);
 
-% Re-calculate gain for accuracy
-%[gain, phase] = bode(kp*D_pi_s*G_DC_zoh, w_c);
-%kp = kp * 1/gain;
-%D_pi_s = D_pi_s * kp;
-
 % Which is mapped into the discrete domain
 D_pi_z = c2d(D_pi_s, T_s, 'Tustin');
 
-figure(2)
+figure(3)
 margin(G_DC_d*D_pi_z)
 
 G_controlled = feedback(G_DC_d*D_pi_z, 1);
-figure(3)
+figure(4)
 step(G_controlled)
-%opt= stepDataOptions('StepAmplitude', 2000);
+%opt = stepDataOptions('StepAmplitude', 2000);
 %step(G_controlled, opt)
 
-% PI Controller values for Simulink:
+% Bilinear (classic) PI Controller values for Simulink:
 Kp_pi = kp;
 Ki_pi = ki/tau_i;
 
 
 % Calculation of PI Controller using LSF with integrator:
+% The design is based on a wanted settling time of 0.1 second.
 T_settle = 0.1;
 n = 3;
 syms s_p;
@@ -166,11 +161,13 @@ eq = T_settle == 1.5*(1+n)*-1/s_p;
 s_p = double(vpasolve(eq,s_p))
 z_p = exp(s_p*T_s)
 
+% Marked matrices are designed for calculating K-values.
 A_mark = [A [0; 0]; -C 0];
 B_mark = [B; 0];
 
 [Ad_mark, Bd_mark] = c2d(A_mark, B_mark, T_s);
 
+% K-values to be used in Simulink
 K_LSF = acker(Ad_mark, Bd_mark, [z_p, z_p, z_p]);
 K_LSF_i = -K_LSF(3)
 K_LSF_p = [K_LSF(2) K_LSF(1)]
