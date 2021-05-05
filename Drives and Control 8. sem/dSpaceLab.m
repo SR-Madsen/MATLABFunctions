@@ -87,7 +87,7 @@ T_calc = 50e-6;
 %% Controller Design:
 % A digital PI controller will be designed in two different ways.
 % The DC motor system to be controlled has the transfer function:
-A = [-2*Kv_motor/J, Ke/J; -Ke/La, -Ra/La];
+A = [-2*Kv_setup/J, Ke/J; -Ke/La, -Ra/La];
 B = [0; 1/La];
 C = [1, 0];
 D = 0;
@@ -136,7 +136,7 @@ D_pi_den_s = [tau_i 0];
 D_pi_s = tf(D_pi_num_s, D_pi_den_s);
 
 % Which is mapped into the discrete domain
-D_pi_z = c2d(D_pi_s, T_s, 'Tustin');
+D_pi_z = c2d(D_pi_s, T_s, 'Tustin')
 
 figure(3)
 margin(G_DC_d*D_pi_z)
