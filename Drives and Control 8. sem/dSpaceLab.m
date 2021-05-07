@@ -81,7 +81,6 @@ V_load = -5;
 D = 0.5;
 R_fet = 0.01; % [Ohm]
 G_fet = 1e-8; % [1/Ohm]
-T_calc = 50e-6;
 
 
 %% Controller Design:
@@ -116,8 +115,8 @@ figure(1)
 margin(G_DC_zoh)
 
 figure(2)
-opt = stepDataOptions('StepAmplitude', 5);
-step(G_DC_zoh, opt)
+opt = stepDataOptions('StepAmplitude', 10);
+step(G_DC, opt)
 
 % This model is then used for designing the two controllers. These are
 % first designed in the continuous domain, and then later mapped.
