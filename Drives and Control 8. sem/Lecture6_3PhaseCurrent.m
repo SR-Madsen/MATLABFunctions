@@ -29,13 +29,23 @@ ylabel('Current [A]')
 
 % Do a Clarke transformation of the 3 currents and plot them in the
 % alpha/beta plane
-Clarke = [1 -1/2 -1/2; 0 sqrt(3)/2 -sqrt(3)/2];
+Clarke = 2/3*[1 -1/2 -1/2; 0 sqrt(3)/2 -sqrt(3)/2];
 phases = [i1; i2; i3];
 alpha_beta = Clarke * phases;
+alpha = i1;
+beta = 1/(sqrt(3)) * (i2  - i3);
 
 figure(2)
-plot(alpha_beta(1,:),alpha_beta(2,:))
+%plot(alpha_beta(1,:),alpha_beta(2,:))
+plot(t,alpha_beta(1,:),t,alpha_beta(2,:),t,alpha,t,beta)
 grid on
 title('Clarke-transformed 3 Phase Symmetrical Current')
 xlabel('Alpha [A]')
 ylabel('Beta [A]')
+
+% Do a Park transformation
+%Park = [-sin(w*t(k)) cos(w*t(k)); cos(w*t(k)) sin(w*t(k))];
+%i_qd = Park * alpha_beta;
+
+%figure(3)
+%plot(i_qd(1,:),i_qd(2,:))
