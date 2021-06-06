@@ -11,6 +11,8 @@ kp = 0.1; % P controller value
 figure(2)
 margin(kp*G) % System after implementing P controller
 
+
+
 % Using a kp value of 0.1 results in a phase margin of 51.8 degrees. This
 % value has been increased by 33.8 degrees from 18 degrees.
 

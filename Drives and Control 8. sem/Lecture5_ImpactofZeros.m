@@ -11,12 +11,13 @@ Gs2 = tf(num2, den);
 Gs3 = tf(num3, den);
 
 figure(1)
+subplot(2,1,1)
 step(Gs1)
 
-figure(2)
+subplot(2,1,2)
 step(Gs2)
 
-figure(3)
+figure(2)
 step(Gs3)
 
 % With no zeros, the curve is a common charging curve, with no ringing.
