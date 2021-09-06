@@ -24,10 +24,16 @@ fig, axs = plt.subplots(2)
 axs[0].plot(inputs, real_sin)
 axs[1].plot(inputs, taylor_sin)
 
-#fig2, axs2 = plt.subplots(2)
-fig2, axs2 = plt.subplots(1)
 error = (taylor_sin - real_sin)
-axs2.plot(inputs, error)
 
-#error_LSB = 
-#axs2[1].plot(inputs, error_LSB)
+plt.figure(3, dpi=1200)
+plt.plot(inputs, error)
+plt.rcParams.update({'font.size': 12})
+plt.xlabel("Input")
+plt.ylabel("Absolute error")
+plt.title("Error of Taylor approximation as function of input")
+plt.grid()
+
+#deviation = (abs(real_sin - taylor_sin))/real_sin * 100
+#plt.figure(4)
+#plt.plot(inputs, deviation)
