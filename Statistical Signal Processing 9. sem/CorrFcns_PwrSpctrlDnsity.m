@@ -26,7 +26,7 @@ stem(tau, rxx, '.')
 
 % Example 2: Low-pass filtered white noise
 fs = 8000;
-help fir1;
+%help fir1;
 firlpf = fir1(50, 1000/(fs/2));
 %figure(2)
 %freqz(firlpf, 1, 1024, fs) % Transfer function of digital filter
@@ -180,4 +180,196 @@ crosscorrplot(x1, y1d, 'none')
 % A combination of the two previous, as expected.
 
 
-% Example 2: 
+% Example 2: x2 = sinusoidal signal, y2 = variants of x2
+f2 = 40;
+n = 0:N-1;
+x2 = sin(2*pi*f2*n*Ts);
+y2a = x2;
+figure(2)
+crosscorrplot(x2, y2a, 'none')
+
+% y2 is set to a time-delayed version of x2
+delay = 80;
+y2b = [zeros(1, delay) x2(1:N-delay)];
+figure(3)
+crosscorrplot(x2, y2b, 'none')
+% The amplitude is reduced slightly and shifted off-zero.
+
+% By adjusting the delay to 280 and 480 and plotting, other values are
+% seen. Explain.
+% The center (or peak) is shifted further, but amplitude is not
+% consistently impacted.
+
+% y2 is set to a noise-infected version of x2
+sigma = 1;
+y2c = x2 + sigma*randn(1,N);
+figure(3)
+crosscorrplot(x2, y2c, 'none')
+
+% The cross-correlation function is very effective a filtering noise from
+% the data. Only when sigma is very large (around 8) does it impact the
+% amplitude of the function, but the shape itself does not change.
+
+% Characteristics of the cross-correlation function:
+% R_xy(tau) = R_yx(-tau)
+% (R_xy(tau))^2 <= R_xx(0)R_yy(0)
+% R_xy(tau) <= 1/2 (R_xx(0) + R_yy(0))
+
+% The cross-correlation is connected to convolution as
+% R_xy(tau) = x(tau) * y(-tau)
+
+%% Power Spectral Density, PSD, Pxx(f)
+% The PSD specifies the power of the stochastic signals for all
+% frequencies. The PSD is defined as Pxx(f) = F(Rxx(tau)).
+% In MATLAB, this is calculated with freqz(Rxx) or fft(Rxx).
+
+% Example 1: Gauss-distributed white noise
+N = 1024;
+fs = 8000;
+n = 0:N-1;
+x1 = randn(1, N);
+[Rxx, tau] = xcorr(x1, 'none');
+stem(tau, Rxx, '.')
+[Pxx, f] = freqz(Rxx, 1, 1024, fs);
+figure(1)
+plot(f, 10*log10(abs(Pxx)))
+
+% The phase is incorrect due to the way MATLAB stores values. This must be
+% handled correctly.
+
+% Plotting the amplitude and phase with error
+figure(2)
+subplot(4,1,1)
+plot(f, 10*log10(abs(Pxx)))
+subplot(4,1,2)
+plot(f, unwrap(angle(Pxx)))
+
+% Calculating phase correction and plotting amplitude and phase without
+% error
+figure(3)
+Pxx = Pxx.*exp(i*(2*pi/fs)*f*(N-1));
+subplot(4,1,3)
+plot(f, 10*log10(abs(Pxx)))
+subplot(4,1,4)
+plot(f, unwrap(angle(Pxx)));
+axis([0 fs/2 -1 1])
+
+% This can be automatically plotted with psdplot(signal, option, fs)
+
+% Example 2: Low-pass filtered white noise
+fir_filter = fir1(50, 1000/(fs/2));
+x2 = filter(fir_filter, 1, x1);
+figure(4)
+psdplot(x2, 'biased', fs)
+
+% The power of the signal at frequencies above the cutoff-frequency is
+% expectedly reduced due to the filtering. The total power is also reduced.
+
+% Example 3: Sinusoidal signal
+f1 = 800;
+n = 0:N-1;
+Ts = 1/fs;
+x3 = sin(2*pi*f1*n*Ts);
+figure(5)
+psdplot(x3, 'biased', fs)
+
+% As can be expected, the power at the sinusoidal signal's frequency is
+% increased in the PSD plot.
+
+% Example 4: Sinusoidal signal with white noise
+sigma = 1;
+x4 = x3 + sigma*randn(1,N);
+figure(6)
+psdplot(x4, 'biased', fs)
+
+% The power at the sinusoidal frequency is less evident.
+% Further increasing the noise removes the sine entirely.
+
+
+% Calculation of PSD in two ways (the Wiener-Kinchine sentence)
+% The connection is R_xx(tau) = x(tau) * x(-tau)
+% In frequency, this corresponds to
+% P_xx(omega) = X(omega)X^*(omega) = |X(omega)|^2
+% Demonstrated with:
+figure(7)
+subplot(2,1,1)
+[Rxx, tau] = xcorr(x3, 'none');
+[Pxx, f] = freqz(Rxx, 1, 1024, fs);
+plot(f, 10*log10(abs(Pxx)))
+subplot(2,1,2)
+[X, f] = freqz(x3, 1, 1024, fs);
+Pxx = X.*conj(X);
+plot(f, 10*log10(abs(Pxx)))
+
+% The Pxx plots are identical.
+% Fundamentally, when using freqz(x) directly on the signal, it plots the
+% amplitude, while with freqz(Rxx) it plots the power.
+
+
+%% Cross Power Spectral Density, Pxy(f)
+% Provides information about to which extend two stochastic signals contain
+% the same frequencies. Contrary to ordinary PSD, the CPSD is complex as it
+% contains phase information.
+% Suppose two signals exist with frequency f1. Signal x has an amplitude of
+% A1 and phase Theta1. Signal y has an amplitude A2 and phase Theta2.
+% In this case, the CPSD value at f1 will be A1A2/2 with phase
+% Theta1-Theta2.
+
+% A function, cpsdplot(x, y, option, fs) has been created for plotting.
+
+% Example 1: x1 = gauss-distributed white noise, y1 = various x1 variants
+N = 1024;
+x1 = randn(1,N);
+fs = 8000;
+
+% y1 is set to a time-delayed version of x1
+delay = 300;
+y1b = [randn(1, delay) x1(1:N-delay)];
+figure(1)
+cpsdplot(x1, y1b, 'none', fs)
+
+% The amplitudes are varying, but all appear, as the signals contain a
+% variety of signals. The phase increases continuously, likely as higher
+% frequencies require less lack for a larger phase shift.
+
+delay = 100;
+y1b = [randn(1, delay) x1(1:N-delay)];
+figure(2)
+cpsdplot(x1, y1b, 'none', fs)
+
+% Amplitudes seem somewhat identical. The phase reaches a somewhat
+% identical value, although perhaps a bit slower.
+
+% Examine the characteristics:
+% Pxy(-omega) = Pxy^*(omega)
+% Pxy(-omega) = Pyx(omega)
+figure(3)
+cpsdplot(x1, y1b, 'none', fs)
+figure(4)
+cpsdplot(y1b, x1, 'none', fs)
+
+% The amplitudes are identical, as would be expected, while the phase is
+% mirrored.
+% Y1 is set to a low-pass filtered version of x1
+fir_filter = fir1(50, 1000/(fs/2));
+y1c = filter(fir_filter, 1, x1);
+figure(5)
+cpsdplot(x1, y1c, 'none', fs)
+
+% The amplitude above the cutoff-frequency is reduced, while the phase has
+% been increased.
+
+% Example 2: x2 = sinusoidal signal, y2 = x2 + white noise
+f1 = 400;
+Ts = 1/fs;
+n = 0:N-1;
+x2 = sin(2*pi*f1*n*Ts)
+y2 = x2 + randn(1,N);
+figure(6)
+cpsdplot(x2, y2, 'none', fs)
+
+% Amplitude is highest and phase lowest at the sinusoidal frequency.
+
+% The cross-spectrum calculation connection is:
+% R_xy(tau) = x(tau) * y(-tau)
+% P_xy(omega) = X(omega)Y^*(omega)
