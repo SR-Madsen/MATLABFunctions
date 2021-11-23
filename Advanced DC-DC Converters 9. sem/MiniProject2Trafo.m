@@ -19,40 +19,82 @@ clear, close all, clc;
 
 % Core properties
 mu_0 = 1.25663706*10^-6;
-mu_r_fe = 2300;
-Ae = 420*10^-6; % [m]
-le = 123*10^-3; % [m]
-Ve = 52000*10^-9; % [m^3]
+%mu_r_fe = 2300;
+%Ae = 420*10^-6; % [m]
+%le = 123*10^-3; % [m]
+%Ve = 52000*10^-9; % [m^3]
+
+% Steinmetz coefficients from Ferroxcube's Excel sheet for materials
+%Kc = 0.00747061809845703;
+%alpha = 1.955;
+%beta = 3.07;
+%Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044 + 6.8244/(alpha + 1.354)));
+
+
+% a) Core: EPCOS TDK E42/21/15, N87
+
+% Core properties
+mu_r_fe = 1690;
+Ae = 178 * 10^-6; % [m]
+le = 97 * 10^-3; % [m]
+Ve = 17300 * 10^-9; % [m]
+
 
 % Calculate core reluctance
 R_core = le/(mu_0*mu_r_fe*Ae);
 
-% Steinmetz coefficients from Ferroxcube's Excel sheet for materials
-Kc = 0.00747061809845703;
-alpha = 1.955;
-beta = 3.07;
-%Ct = 1.65423076923077;
-%Ct1 = 0.0126;
-%Ct2 = 0.0000605769230769231;
-Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044 + 6.8244/(alpha + 1.354)));
-
-
 % b) Primary + secondary winding: Copper foil, 25mm width, 0.3mm thickness
 
 % Winding properties
-w_foil_p = 25*10^-3; % [m]
+% w_foil_p = 25*10^-3; % [m]
+% t_foil_p = 0.3*10^-3; % [m]
+% w_foil_s = w_foil_p; % [m]
+% t_foil_s = t_foil_p; % [m]
+
+
+% b) Primary + secondary winding: Copper foil, 18mm width, 0.3mm thickness
+% (Cut 25mm width to 18mm)
+w_foil_p = 18*10^-3; % [m]
 t_foil_p = 0.3*10^-3; % [m]
 w_foil_s = w_foil_p; % [m]
-t_foil_s = t_foil_p; % [m]
+t_foil_s = 0.3*10^-3; % [m]
 
 %% 3) Propose a stackup for the magnetic design
 % Kapton tape thickness = 0.055 mm
 t_kapton = 0.055*10^-3; % [m]
 
+% Preliminary calculation of thickness - will it blend/fit in window?
+sects = 5;
+t_sect = (7*t_kapton + 2*t_foil_p + t_foil_s);
+t_stackup = sects*t_sect + 3*t_kapton;
+
 % Stackup definition, assuming none in parallel
 Nrow = 1;
 
 syms P S
+
+% Stackup for Ferroxcube E55/28/25
+% stackup = [P, t_foil_p, 1, w_foil_p;
+%            S, t_foil_s, 0.5, w_foil_s;
+%            P, t_foil_p, 1, w_foil_p;
+%            P, t_foil_p, 1, w_foil_p;
+%            S, t_foil_s, 0.5, w_foil_s;
+%            P, t_foil_p, 1, w_foil_p;
+%            P, t_foil_p, 1, w_foil_p;
+%            S, t_foil_s, 0.5, w_foil_s;
+%            P, t_foil_p, 1, w_foil_p;
+%            P, t_foil_p, 1, w_foil_p;
+%            S, t_foil_s, 0.5, w_foil_s;
+%            P, t_foil_p, 1, w_foil_p;
+%            P, t_foil_p, 1, w_foil_p;
+%            S, t_foil_s, 0.5, w_foil_s;
+%            P, t_foil_p, 1, w_foil_p;
+%            P, t_foil_p, 1, w_foil_p;
+%            S, t_foil_s, 0.5, w_foil_s;
+%            P, t_foil_p, 1, w_foil_p;];
+
+
+% Stackup for EPCOS TDK E42/21/15
 stackup = [P, t_foil_p, 1, w_foil_p;
            S, t_foil_s, 0.5, w_foil_s;
            P, t_foil_p, 1, w_foil_p;
@@ -67,11 +109,7 @@ stackup = [P, t_foil_p, 1, w_foil_p;
            P, t_foil_p, 1, w_foil_p;
            P, t_foil_p, 1, w_foil_p;
            S, t_foil_s, 0.5, w_foil_s;
-           P, t_foil_p, 1, w_foil_p;
-           P, t_foil_p, 1, w_foil_p;
-           S, t_foil_s, 0.5, w_foil_s;
            P, t_foil_p, 1, w_foil_p;];
-
        
 % Find isolation thickness between each layer
 for i = 1:1:length(stackup)
@@ -83,9 +121,15 @@ for i = 1:1:length(stackup)
 end
        
 % Find length of each turn
-w_bobbin = 0.02; % [m]
-h_bobbin = 0.028; % [m]
-ln(1) = 2*w_bobbin + 2*h_bobbin;
+
+% Bobbin for Ferroxcube E55/28/25
+%w_bobbin = 0.02; % [m]
+%h_bobbin = 0.028; % [m]
+
+% Bobbin for EPCOS TDK E42/21/15
+w_bobbin_wind = 0.0174; % [m]
+h_bobbin_wind = 0.0151; % [m]
+ln(1) = 2*w_bobbin_wind + 2*h_bobbin_wind;
 for i = 2:1:length(stackup)
     ln(i) = ln(i-1) + ((t_iso(i-1) + stackup(length(stackup)+(i-1))) * 8);
 end
@@ -129,11 +173,11 @@ D = (Vout/Vin)/(2*n_trafo);
 Pout = 1500; % [V]
 Iout = Pout/Vout; % [A]
 
-Lout = 2.3*10^-6; % [H]
-Delta_I = (Vin*n_trafo - Vout)*D/(Lout*fs) % [A]
+Lout = 1.15*10^-6; % [H]
+Delta_I = (Vin*n_trafo - Vout)*D/(Lout*2*fs) % [A]
 
 % Physical properties
-T = 50; % [C]
+T = 70; % [C]
 mu_r_cu = 0.999994;
 rho_cu = 1.68*10^-8*(1+0.003862*(T-20)); % [Ohm/m]
 
@@ -142,7 +186,7 @@ rho_cu = 1.68*10^-8*(1+0.003862*(T-20)); % [Ohm/m]
 delta_w = sqrt(rho_cu/(pi*fs*mu_0*mu_r_cu)) % [m]
 
 for i = 1:1:length(stackup) % Calculate phi from copper thickness
-    phi_j(i) = stackup(length(stackup)+i)/(2*delta_w);
+    phi_j(i) = stackup(length(stackup)+i)/(delta_w);
 end
 
 
@@ -153,7 +197,7 @@ Im = (D*(1/fs)*Vin)/Lm
 Ip = Iout * 2*D * n_trafo + Im/2;
 
 % Determine if maximum B field is lower than saturation B field
-% B_sat = 0.3 T
+% B_max = 0.3 T, B_sat = 0.5 T
 Delta_B = (D * Vin)/(Np * Ae * fs)
 
 
@@ -208,9 +252,14 @@ L_lk = double(mu_0/Ip^2 * ( sum(L_lkj) + sum(L_lkk) )) % = Lp + Ls n^2
 
 % Parasitic capacitance
 % Found in the capacitive losses Excel sheet
-C_cm = 6.96667e-09; % Does not result in losses
-C_dm = 2.13468e-10;
 
+% For Ferroxcube
+%C_cm = 6.96667e-09; % Does not result in losses
+%C_dm = 2.13468e-10;
+
+% For EPCOS TDK
+C_cm = 4.1571e-09;
+C_dm = 1.43e-10;
 
 %% 5) Calculate power losses and estimate temperature rise
 
@@ -224,8 +273,8 @@ P_Rac_s = R_AC_s * I_RMS_s^2;
 P_cu = P_Rac_p + P_Rac_s
 
 % Core loss
-%Pv = Kc * (Delta_B/2)^beta * fs^alpha * (Ct2*T^2 - Ct1*T + Ct); % Excel
-Pv = Ki * Delta_B^beta * fs^alpha * (2 * D^(1-alpha));
+%Pv = Ki * Delta_B^beta * fs^alpha * (2 * D^(1-alpha)); % For Ferroxcube
+Pv = 134*1000; % [W/m3] % For EPCOS TDK, from Magnetic Design Tool
 P_fe = Pv * Ve
 
 % Inductance loss
@@ -239,5 +288,10 @@ P_tot = P_cu + P_fe + P_llk + P_cdm
 
 
 % Approximate temperature rise
-%A_su = 4.4*4.4*6; % Roughly bobbin surface area
-%Delta_T = ((P_tot * 1000)/(A_su))^0.833
+t_bobbin = 3.5; % [cm]
+w_bobbin = 2.92; % [cm]
+h_bobbin = 2.81; % [cm]
+
+P_trafo = P_fe + P_cu;
+A_su = 2*(t_bobbin*w_bobbin) + 2*(t_bobbin*h_bobbin) + 2*(w_bobbin*h_bobbin); % Surface area of bobbin
+Delta_T = ((P_trafo * 1000)/(A_su))^0.833
