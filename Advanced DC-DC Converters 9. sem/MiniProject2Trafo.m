@@ -39,9 +39,15 @@ Ae = 178 * 10^-6; % [m]
 le = 97 * 10^-3; % [m]
 Ve = 17300 * 10^-9; % [m]
 
+% Steinmetz
+Kc = 0.01493;
+alpha = 1.493;
+beta = 2.466;
+Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
+
 
 % Calculate core reluctance
-R_core = le/(mu_0*mu_r_fe*Ae);
+%R_core = le/(mu_0*mu_r_fe*Ae);
 
 % b) Primary + secondary winding: Copper foil, 25mm width, 0.3mm thickness
 
@@ -174,7 +180,7 @@ D = (Vout/Vin)/(2*n_trafo);
 Pout = 1500; % [V]
 Iout = Pout/Vout; % [A]
 
-Lout = 1.15*10^-6; % [H]
+Lout = 4*10^-6; % [H]
 Delta_I = (Vin*n_trafo - Vout)*D/(Lout*2*fs) % [A]
 
 % Physical properties
@@ -227,8 +233,8 @@ for j = 1:1:length(Fr_j)
         k_s = k_s + 1;
     end
 end
-R_AC_p = sum(R_AC_jp)
-R_AC_s = sum(R_AC_js)
+R_AC_p = double(sum(R_AC_jp))
+R_AC_s = double(sum(R_AC_js))
 
 
 % Leakage inductance
@@ -267,13 +273,13 @@ C_dm = 1.43e-10;
 I_RMS_s = 25.0416;
 I_RMS_m = sqrt(D*1/3*(Im/2)^2);
 I_RMS_p = I_RMS_s*n_trafo + I_RMS_m;
-P_Rac_p = R_AC_jp * I_RMS_p^2;
-P_Rac_s = R_AC_js * I_RMS_s^2;
+P_Rac_p = R_AC_p * I_RMS_p^2;
+P_Rac_s = R_AC_s * I_RMS_s^2;
 P_cu = P_Rac_p + P_Rac_s
 
 % Core loss
 %Pv = Ki * Delta_B^beta * fs^alpha * (2 * D^(1-alpha)); % For Ferroxcube
-Pv = 160*1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
+Pv = Ki * (Delta_B/2)^beta *fs^alpha * 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
 P_fe = Pv * Ve
 
 % Inductance loss
@@ -449,3 +455,35 @@ grid on
 plot(t_foil_test_p, Fr_j, t_foil_test_p, R_DC_s*1000, t_foil_test_p, R_AC_s*1000, t_foil_test_p, R_tot_s*1000, 'LineWidth', 4)
 title('Secondary side resistance versus foil thickness')
 legend('F_R', 'DC resistance [m\Omega]', 'AC resistance [m\Omega]', 'Total resistance [m\Omega]')
+
+%% Steinmetz Coefficients from Magnetic Design Tool
+%x = 1e-3*[24.927113702623913, 50, 75.0728862973761, 99.85422740524783, 125.07288629737612, 150.1457725947522, 175.0728862973761, 198.25072886297374];
+%y = [12.29795638565086, 48.2771448819782, 117.36223730353876, 278.7166399411938, 434.5665545421274, 677.5630273329247, 1032.0264226008512, 1553.6593076021893];
+
+x = [0.04981397271599839, 0.06196775527077309, 0.074844977263332, 0.08786688714344776, 0.09987598181066559, 0.11275320380322451, 0.12505167424555608, 0.13778420835055816, 0.1500826787928897];
+y = [47.73301542861616, 73.31905448705652, 115.26312962170755, 183.31657832405185, 278.33123323329363, 351.0084821766569, 437.5578659378697, 539.1574322099227, 679.9410534556955];
+
+
+% Curve fitting
+% cftool
+% Pv = f(B)
+% X data = x, Y data = y
+% equation = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)))*B^beta*200000^alpha
+% Minimum values are 0. Start at 0.01, 1.5, and 2.5. (Kc, alpha, beta)
+Kc = 0.01493;
+alpha = 1.493;
+beta = 2.466;
+
+Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
+
+Pv = Ki*(Delta_B/2)^beta*fs^alpha
+
+
+% Calculating from Tool data
+%syms Kc
+%alpha = 1.614; beta = 2.5518;
+%eq1 = 197 == Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)))*0.1^beta*fs^alpha;
+%Kc = double(solve(eq1,Kc));
+
+%Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
+%Pv = Ki*(Delta_B/2)^beta*fs^alpha
