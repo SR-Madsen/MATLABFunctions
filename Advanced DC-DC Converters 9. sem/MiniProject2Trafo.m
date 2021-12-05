@@ -72,13 +72,13 @@ t_kapton = 0.055*10^-3; % [m]
 
 % Preliminary calculation of thickness - will it blend/fit in window?
 sects = 5;
-t_sect = (7*t_kapton + 2*t_foil_p + t_foil_s);
+t_sect = (8*t_kapton + 2*t_foil_p + t_foil_s);
 t_stackup = sects*t_sect + 3*t_kapton
 
 % Stackup definition, assuming none in parallel
 Nrow = 1;
 
-syms P S
+%syms P S
 
 % Stackup for Ferroxcube E55/28/25
 % stackup = [P, t_foil_p, 1, w_foil_p;
@@ -102,28 +102,28 @@ syms P S
 
 
 % Stackup for EPCOS TDK E42/21/15
-stackup = [P, t_foil_p, 1, w_foil_p;
-           S, t_foil_s, 0.5, w_foil_s;
-           P, t_foil_p, 1, w_foil_p;
-           P, t_foil_p, 1, w_foil_p;
-           S, t_foil_s, 0.5, w_foil_s;
-           P, t_foil_p, 1, w_foil_p;
-           P, t_foil_p, 1, w_foil_p;
-           S, t_foil_s, 0.5, w_foil_s;
-           P, t_foil_p, 1, w_foil_p;
-           P, t_foil_p, 1, w_foil_p;
-           S, t_foil_s, 0.5, w_foil_s;
-           P, t_foil_p, 1, w_foil_p;
-           P, t_foil_p, 1, w_foil_p;
-           S, t_foil_s, 0.5, w_foil_s;
-           P, t_foil_p, 1, w_foil_p;];
+stackup = [1, t_foil_p, 1, w_foil_p;
+           2, t_foil_s, 0.5, w_foil_s;
+           1, t_foil_p, 1, w_foil_p;
+           1, t_foil_p, 1, w_foil_p;
+           2, t_foil_s, 0.5, w_foil_s;
+           1, t_foil_p, 1, w_foil_p;
+           1, t_foil_p, 1, w_foil_p;
+           2, t_foil_s, 0.5, w_foil_s;
+           1, t_foil_p, 1, w_foil_p;
+           1, t_foil_p, 1, w_foil_p;
+           2, t_foil_s, 0.5, w_foil_s;
+           1, t_foil_p, 1, w_foil_p;
+           1, t_foil_p, 1, w_foil_p;
+           2, t_foil_s, 0.5, w_foil_s;
+           1, t_foil_p, 1, w_foil_p;];
        
 % Find isolation thickness between each layer
 for i = 1:1:length(stackup)
-    if (stackup(i) == P && stackup(i+1) == S) || (stackup(i) == S && stackup(i+1) == P)
+    if (stackup(i) == 1 && stackup(i+1) == 2) || (stackup(i) == 2 && stackup(i+1) == 1)
         t_iso(i) = 3*t_kapton;
     else
-        t_iso(i) = t_kapton;
+        t_iso(i) = 2*t_kapton;
     end
 end
        
@@ -147,11 +147,11 @@ Ns = 0;
 k_p = 1;
 k_s = 1;
 for i = 1:1:length(stackup)
-    if stackup(i) == P
+    if stackup(i) == 1
         Np = Np + 1;
         ln_p(k_p) = ln(i);
         k_p = k_p + 1;
-    elseif stackup(i) == S
+    elseif stackup(i) == 2
         Ns = Ns + 1;
         ln_s(k_s) = ln(i);
         k_s = k_s + 1;
@@ -162,9 +162,9 @@ n_trafo = Ns/Np;
 
 % Find currents of each winding in stackup
 for i = 1:1:length(stackup)
-    if stackup(i) == P
+    if stackup(i) == 1
         I_stackup(i) = 1;
-    elseif stackup(i) == S
+    elseif stackup(i) == 2
         I_stackup(i) = -1/n_trafo;
     end
 end
@@ -225,10 +225,10 @@ end
 k_p = 1;
 k_s = 1;
 for j = 1:1:length(Fr_j)
-    if stackup(j) == P
+    if stackup(j) == 1
         R_AC_jp(k_p) = R_DC_jp(k_p) * Fr_j(j);
         k_p = k_p + 1;
-    elseif stackup(j) == S
+    elseif stackup(j) == 2
         R_AC_js(k_s) = R_DC_js(k_s) * Fr_j(j);
         k_s = k_s + 1;
     end
@@ -270,8 +270,10 @@ C_dm = 1.43e-10;
 
 % DC resistance losses = 0 W
 % AC resistance losses
-I_RMS_s = 25.0416;
-I_RMS_m = sqrt(D*1/3*(Im/2)^2);
+u_s = 1/3*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
+I_RMS_s = sqrt(D.*u_s+(1-D).*u_s);
+u1_m = 1/3*(-Im/2).^2; u2_m = 1/3*(Im/2).^2;
+I_RMS_m = sqrt((D./2).*u1_m+(D./2).*u2_m+((1-D)./2).*u2_m+((1-D)./2).*u1_m);
 I_RMS_p = I_RMS_s*n_trafo + I_RMS_m;
 P_Rac_p = R_AC_p * I_RMS_p^2;
 P_Rac_s = R_AC_s * I_RMS_s^2;
@@ -290,6 +292,8 @@ P_cdm = C_dm * Vin^2 * fs
 
 % Total loss
 P_tot = P_cu + P_fe + P_llk + P_cdm
+
+eff = Pout./(Pout+P_tot)
 
 
 % Approximate temperature rise
@@ -444,9 +448,12 @@ R_tot_s = R_AC_s + R_DC_s
 figure(1)
 hold on
 grid on
-plot(t_foil_test_p, Fr_j, t_foil_test_p, R_DC_p*1000, t_foil_test_p, R_AC_p*1000, t_foil_test_p, R_tot_p*1000, 'LineWidth', 4)
-title('Primary side resistance versus foil thickness')
-legend('F_R', 'DC resistance [m\Omega]', 'AC resistance [m\Omega]', 'Total resistance [m\Omega]')
+plot(t_foil_test_p*1000, R_DC_p*1000, t_foil_test_p*1000, R_AC_p*1000, 'LineWidth', 4)
+set(gca, 'FontSize', 18)
+title('Primary side resistance versus foil thickness', 'FontSize', 26)
+ylabel('Winding Resistance [m\Omega]', 'FontSize', 22)
+xlabel('Winding Thickness [mm]', 'FontSize', 22)
+legend('DC resistance [m\Omega]', 'AC resistance [m\Omega]')
 
 
 figure(2)
@@ -487,3 +494,186 @@ Pv = Ki*(Delta_B/2)^beta*fs^alpha
 
 %Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
 %Pv = Ki*(Delta_B/2)^beta*fs^alpha
+
+
+%% Estimation of inductances on power boards
+clear, close all, clc;
+
+mu_0 = 1.25663706*10^-6;
+
+% Assuming 1.2mm PCB thickness, 4 layers
+h = 0.11e-3; % [m] = 0.11 mm
+h_tot = 1.2e-3; % [m]
+
+
+% Primary PCB
+w_input = 3e-3; % [m] = 3 mm
+l_input = 3.25e-3; %[m] = 3.25 mm
+
+w_csih = 2.5e-3; % [m] = 2.5 mm
+l_csih = 4.5e-3; % [m] = 4.5 mm
+
+w_csil = 2.5e-3; % [m] = 2.5 mm
+l_csil = 7e-3; % [m] = 7 mm
+
+w(1) = w_input; w(2) = w_csih; w(3) = w_csil;
+l(1) = l_input; l(2) = l_csih; l(3) = l_csil;
+
+L_para_pri = mu_0 .* h./w.*l .* (0.27./(1-0.74.*exp(-0.45.*h./w)))
+
+L_highloop_pri = L_para_pri(1);
+L_swnode_pri = L_para_pri(2);
+L_lowloop_pri = L_para_pri(3);
+
+
+% Secondary PCB
+w_input = 5e-3; % [m]
+l_input = h_tot + 4e-3; %[m]
+
+w_csih = 4.5e-3; % [m]
+l_csih = 2.75e-3; % [m]
+
+w_csil = 3.5e-3; % [m]
+l_csil = 3.5e-3; % [m]
+
+w(1) = w_input; w(2) = w_csih; w(3) = w_csil;
+l(1) = l_input; l(2) = l_csih; l(3) = l_csil;
+
+L_para_sec = mu_0 .* h./w.*l .* (0.27./(1-0.74.*exp(-0.45.*h./w)))
+
+L_highloop_sec = L_para_sec(1);
+L_swnode_sec = L_para_sec(2);
+L_lowloop_sec = L_para_sec(3);
+
+
+%% Calculate equivalent circuit parameters for range of D
+
+% Converter characteristics
+fs = 200000; % [Hz]
+Vin = 130; % [V]
+Vout = 60; % [V]
+Iout = 25;
+%D = (Vout/Vin)/(2*n_trafo);
+D = 0.01:0.01:0.5;
+Pout = 1500; % [V]
+Rout = Vout/Iout; % [R]
+Vout = 2*Vin*n_trafo*D;
+Iout = Vout./Rout; % [A]
+
+Lout = 4*10^-6; % [H]
+Delta_I = (Vin*n_trafo - Vout).*D./(Lout*2*fs) % [A]
+
+% Physical properties
+T = 70; % [C]
+mu_r_cu = 0.999994;
+rho_cu = 1.68*10^-8*(1+0.003862*(T-20)); % [Ohm/m]
+
+
+% Penetration depth
+delta_w = sqrt(rho_cu/(pi*fs*mu_0*mu_r_cu)) % [m]
+
+for i = 1:1:length(stackup) % Calculate phi from copper thickness
+    phi_j(i) = stackup(length(stackup)+i)/(delta_w);
+end
+
+
+% Magnetizing inductance
+Lm = (mu_0*mu_r_fe*Ae*Np^2)/le
+Im = (D*(1/fs)*Vin)/Lm
+
+Ip = Iout .* 2.*D .* n_trafo + Im./2;
+
+% Determine if maximum B field is lower than saturation B field
+% B_max = 0.3 T, B_sat = 0.5 T
+Delta_B = (D * Vin)/(Np * Ae * fs)
+
+
+% DC resistances
+R_DC_jp = rho_cu * ln_p / (w_foil_p*t_foil_p);
+R_DC_p = sum(R_DC_jp)
+R_DC_js = rho_cu * ln_s / (w_foil_s*t_foil_s);
+R_DC_s = sum(R_DC_js)
+
+% AC-to-DC resistance factor
+for j = 1:1:length(phi_j)
+    Fr_j(j) = phi_j(j)/2 * (( sinh(phi_j(j)) + sin(phi_j(j)) ) / ( cosh(phi_j(j)) - cos(phi_j(j)) )) ...
+            + phi_j(j)/2 * (2 * stackup(length(stackup)*2+j) - 1)^2 ...
+            * (( sinh(phi_j(j)) - sin(phi_j(j)) ) / ( cosh(phi_j(j)) + cos(phi_j(j)) ));
+end
+
+% Total AC resistance
+k_p = 1;
+k_s = 1;
+for j = 1:1:length(Fr_j)
+    if stackup(j) == 1
+        R_AC_jp(k_p) = R_DC_jp(k_p) * Fr_j(j);
+        k_p = k_p + 1;
+    elseif stackup(j) == 2
+        R_AC_js(k_s) = R_DC_js(k_s) * Fr_j(j);
+        k_s = k_s + 1;
+    end
+end
+R_AC_p = double(sum(R_AC_jp))
+R_AC_s = double(sum(R_AC_js))
+
+
+% Leakage inductance
+for j = 1:1:length(Ip)
+    I_enclosed(j,1) = 0;
+end
+for j = 1:1:length(Ip)
+    for i = 2:1:length(stackup)+1  % Find enclosed current
+        I_enclosed(j,i) = I_enclosed(j,i-1) + I_stackup(i-1) * Ip(j);
+    end
+end
+
+for j = 1:1:length(Ip)
+    for i = 1:1:length(stackup)  % Find copper inductance
+        L_lkj(j,i) = (ln(i)*stackup(length(stackup)+i))/(3*Nrow*stackup(length(stackup)*3+i)) ...
+                 * (I_enclosed(j,i)^2 + I_enclosed(j,i)*I_enclosed(j,i+1) + I_enclosed(j,i+1)^2);
+    end
+end
+
+for j = 1:1:length(Ip)
+    for i = 1:1:length(stackup)  % Find insulation inductance
+        L_lkk(j,i) = ln(i)*t_iso(i)/stackup(length(stackup)*3+i) * I_enclosed(j,i+1)^2;
+    end
+end
+
+for j = 1:1:length(Ip)
+    L_lk(j) = double(mu_0/Ip(j)^2 * ( sum(L_lkj(j,:)) + sum(L_lkk(j,:)) )); % = Lp + Ls n^2
+end
+L_lk
+
+C_cm = 4.1571e-09;
+C_dm = 1.43e-10;
+
+%% Calculate losses for a range of D
+% DC resistance losses = 0 W
+% AC resistance losses
+u_s = 1/3*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
+I_RMS_s = sqrt(D.*u_s+(1-D).*u_s);
+u1_m = 1/3*(-Im/2).^2; u2_m = 1/3*(Im/2).^2;
+I_RMS_m = sqrt((D./2).*u1_m+(D./2).*u2_m+((1-D)./2).*u2_m+((1-D)./2).*u1_m);
+I_RMS_p = I_RMS_s*n_trafo + I_RMS_m;
+P_Rac_p = R_AC_p * I_RMS_p.^2;
+P_Rac_s = R_AC_s .* I_RMS_s.^2;
+P_cu = P_Rac_p + P_Rac_s
+
+% Core loss
+%Pv = Ki * Delta_B^beta * fs^alpha * (2 * D^(1-alpha)); % For Ferroxcube
+Pv = Ki .* (Delta_B/2).^beta .* fs.^alpha .* 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
+P_fe = Pv .* Ve
+
+% Inductance loss
+P_llk = L_lk .* n_trafo.^2 .* (Iout + Delta_I./2).^2 .* fs
+
+% Capacitive loss
+P_cdm = C_dm * Vin^2 * fs
+
+% Total loss
+P_tot = P_cu + P_fe + P_llk + P_cdm
+
+Pout = Vout.*Iout;
+eff = Pout./(Pout+P_tot)
+plot(Pout,eff)
