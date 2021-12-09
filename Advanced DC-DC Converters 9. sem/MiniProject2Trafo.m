@@ -252,7 +252,7 @@ for i = 1:1:length(stackup)  % Find insulation inductance
     L_lkk(i) = ln(i)*t_iso(i)/stackup(length(stackup)*3+i) * I_enclosed(i+1)^2;
 end
 
-L_lk = double(mu_0/Ip^2 * ( sum(L_lkj) + sum(L_lkk) )) % = Lp + Ls n^2
+L_lk = double(mu_0/Ip^2 * ( sum(L_lkj) + sum(L_lkk) )) % = Lp + Ls/n^2
 
 
 % Parasitic capacitance
@@ -263,8 +263,8 @@ L_lk = double(mu_0/Ip^2 * ( sum(L_lkj) + sum(L_lkk) )) % = Lp + Ls n^2
 %C_dm = 2.13468e-10;
 
 % For EPCOS TDK
-C_cm = 4.1571e-09;
-C_dm = 1.43e-10;
+C_cm = 3.92359e-09;
+C_dm = 1.11762e-10;
 
 %% 5) Calculate power losses and estimate temperature rise
 
@@ -645,8 +645,8 @@ for j = 1:1:length(Ip)
 end
 L_lk
 
-C_cm = 4.1571e-09;
-C_dm = 1.43e-10;
+C_cm = 3.92359e-09;
+C_dm = 1.11762e-10;
 
 %% Calculate losses for a range of D
 % DC resistance losses = 0 W

@@ -52,5 +52,7 @@ zcm_data = readmatrix('LabMeasurements/ZCM.TXT');
 
 f = zcm_data(1:1:length(zcm_data)/2,1);
 cs = zcm_data(1:1:length(zcm_data)/2,1);
+rs = zs_data(length(zcm_data)/2+1:1:length(zcm_data),2);
+semilogx(f, rs)
 
 Ccm = 7.685370000000000e-09;
