@@ -8,15 +8,18 @@ Ts = 1/fs; % [s]
 Vin = 130; % [V]
 Vout = 60; % [V]
 Iout = 25; % [A]
-Rout = Vout/Iout; % [Ohm]
-D = 0.01:0.01:0.5;
-
 n_trafo = 0.5;
-Vout = 2*Vin*n_trafo*D; % [V]
-Iout = Vout./Rout; % [A]
 
-%Lout = 4*10^-6; % [H]
-%Delta_I = (Vin*n_trafo - Vout).*D./(Lout*2*fs); % [A]
+% For changing both output voltage and current
+%D = 0.01:0.01:0.49;
+%Rout = Vout/Iout; % [Ohm]
+%Vout = 2*Vin*n_trafo*D; % [V]
+%Iout = Vout./Rout; % [A]
+
+% For changing only output current
+D = 0.4615;
+Iout = 0.5:0.5:25;
+Rout = Vout./Iout;
 
 
 %% Transformer core properties
@@ -27,9 +30,9 @@ le = 97 * 10^-3; % [m]
 Ve = 17300 * 10^-9; % [m]
 
 % Steinmetz
-Kc = 0.01493;
-alpha = 1.493;
-beta = 2.466;
+Kc = 0.009498;
+alpha = 1.424;
+beta = 2.383;
 Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
 
 w_foil_p = 18*10^-3; % [m]
@@ -69,7 +72,7 @@ dIL = IL_avg*pIL;
 
 % Inductor inductance
 L = (Vin.*n_trafo-Vout)./dIL.*D.*1./(2.*fs);
-L = 4e-6;       % Adding a margin
+%L = 4e-6;       % Adding a margin
 
 %dIL = (Vin.*n_trafo-Vout)./L.*D.*1/(2.*fs)   % new dIL
 %IL_rms = sqrt(IL_avg.^2 + ((dIL./2)/sqrt(3)).^2);
@@ -90,7 +93,8 @@ ESR_max = dVo./dIL;
 %N = ceil(sqrt(L/AL))
 N = 6;
 Pv_l = 16.5e3; % W/m^3 read at D = 0.25 N = 6
-L = N^2*AL;
+%L = N^2*AL;
+L = 4.5e-6; % Measured
 % Calculating currents again based on actual L
 dIL = (Vin.*n_trafo-Vout)./L.*D.*1./(2.*fs);   % new dIL
 IL_rms = sqrt(IL_avg.^2 + ((dIL./2)/sqrt(3)).^2);
@@ -98,7 +102,6 @@ IC_rms = 1/sqrt(3).*dIL./2;
 m = 1:N;
 
 h_tape = 0.055e-3*2;
-h = [0.15e-3 0.2e-3 0.3e-3 0.4e-3]'; % foil thickness
 h = 0.4e-3;
 h_free_window = h_window - (N*h+N*h_tape);
 l_creepage = h_free_window + (w_bobbin - w);
@@ -130,23 +133,22 @@ T = 50; % degrees C
 rho_w = 1.68e-8*(1+0.003862*(T-20));
 mu_0 = 4e-7*pi;
 skindepth = sqrt(rho_w/(pi*mu_0*2*fs));
+phi = h/skindepth;
+%FR = 0;
 
-j = 1;
-for p = [0.15e-3 0.2e-3 0.3e-3 0.4e-3] % foil thickness
-    phi = p/skindepth;
-    FR = 0;
-    for i = 1:length(m)
-        FR_j = phi/2 * ((exp(phi)-exp(-phi))/2+sind(phi))/((exp(phi)+exp(-phi))/2-cosd(phi)) + phi/2*(2*m(i)-1)^2*((exp(phi)-exp(-phi))/2-sind(phi))/((exp(phi)+exp(-phi))/2+cosd(phi));
-        FR_j_array(j,i) = FR_j;
-        FR = FR + FR_j;
-    end 
-    FR_array(j) = FR/length(m);
-    j = j+1;
+% for i = 1:length(m)
+%     FR_j(m) = phi/2 * ((exp(phi)-exp(-phi))/2+sind(phi))/((exp(phi)+exp(-phi))/2-cosd(phi)) + ...
+%            phi/2*(2*m(i)-1)^2*((exp(phi)-exp(-phi))/2-sind(phi))/((exp(phi)+exp(-phi))/2+cosd(phi));
+% end
+for i = 1:length(m)
+    FR_j(m) = phi/2 * (( sinh(phi) + sin(phi) ) / ( cosh(phi) - cos(phi) )) ...
+            + phi/2 * (2 * m(i) - 1)^2 ...
+            * (( sinh(phi) - sin(phi) ) / ( cosh(phi) + cos(phi) )); 
 end
 % FR_j_array: [FR_1(h1) FR_2(h1) FR_3(h1) FR_4(h1); 
 %              FR_1(h2) FR_2(h2) FR_3(h2) FR_4(h2); ...
 
-R_ACj = FR_j_array .* R_DCj;
+R_ACj = FR_j .* R_DCj;
 for i= 1:length(h)
     R_AC(i,1) = sum(R_ACj(i,:));
 end 
@@ -164,14 +166,14 @@ P_AC = R_AC.*IC_rms.^2;
 % ylabel('F_R, R_{DC} [m\Omega], R_{AC} [m\Omega]')
 
 %%%%%%%%%%%%%%%%%%%%% Intra-winding Capacitance %%%%%%%%%%%%%%%%%%%%%
-V1 = Vin.*n_trafo;
+%V1 = Vin.*n_trafo;
 k = 0;
 for i = 1:(length(m)+1)
-    V(:,i) = Vin.*n_trafo - k.*(Vin.*n_trafo-Vout)./length(m);
+    V(:,i) = Vin*n_trafo - k.*(Vin*n_trafo-Vout)./length(m);
     k = k+1;
 end
 
-for j = 1:1:length(V)
+for j = 1:1:size(V,1)
     for i = 1:(length(m)-1)
         Vaj(j,i) = V(j,i+1)-V(j,i);
         Vbj(j,i) = V(j,i+2)-V(j,i+1);
@@ -180,64 +182,65 @@ end
 
 epsi_0 = 8.85419e-12;
 epsi_r = 3.4;
-V_tot = Vin.*n_trafo;
+V_tot = Vin*n_trafo;
 
-for i = 1:length(V)
+for i = 1:1:size(V,1)
     for j = 1:(length(m)-1)
         Cdmj(i,j) = w*lw(j+1)/h_tape*(Vaj(i,j).^2+Vaj(i,j).*Vbj(i,j)+Vbj(i,j).^2);
     end
 end
 
-for i = 1:1:length(V)
+for i = 1:1:size(V,1)
     Cdm(i,1) = epsi_0*epsi_r/(3*V_tot^2) * sum(Cdmj(i,:));
 end
 
 %Cdm
-P_Cdm = 0.5.*Cdm.*V_tot.^2.*2.*fs;
+P_Cdm = Cdm.*V_tot.^2.*2.*fs;
+%P_Cdm = 0.5*Cdm*V_tot^2*2*fs;
 
 %%%%%%%%%%%%%%%%%%%%% Leakage Inductance %%%%%%%%%%%%%%%%%%%%%
 Nrow = 1;
 I_tot = IL_avg;
+m = 0:1:length(m);
 
 I_enclosed = (m'*IL_avg)';
 i = 1;
 Lj = lw(i,1)*h./(3*Nrow*w) * (I_enclosed(1)^2);
 for i = 1:length(V)
-    for j = 2:length(m)
-        Lj(i,j) = lw(j)*h./(3*Nrow*w) .* (I_enclosed(i,j).^2 + I_enclosed(i,j).*I_enclosed(i,j-1)+I_enclosed(i,j-1).^2);
+    for j = 1:length(m)-1
+        Lj(i,j) = lw(j)*h./(3*Nrow*w) .* (I_enclosed(i,j).^2 + I_enclosed(i,j).*I_enclosed(i,j+1)+I_enclosed(i,j+1).^2);
     end
 end
 
 for i = 1:length(V)
     for j = 1:length(m)-1
-        Lj_insul(i,j) = lw(j)*h./w .* (I_enclosed(i,j+1)-I_enclosed(i,j)).^2;
+        Lj_insul(i,j) = lw(j)*h./w .* (I_enclosed(i,j+1)).^2;
     end
 end
 
 for i = 1:length(V)
-    for j = 1:length(m)-1
-        L_llk(i,:) = mu_0./I_tot.^2.*(sum(Lj(i,:)) + sum(Lj_insul(i,:)));
-    end
+    L_llk(i) = mu_0./(I_tot(i).^2).*(sum(Lj(i,:)) + sum(Lj_insul(i,:)));
 end
+
 
 %%%%%%%%%%%%%%%%%%%%% Core Loss %%%%%%%%%%%%%%%%%%%%%
 
 dB = D.*(Vin.*n_trafo-Vout)./(N.*Ae_l.*2.*fs);
 Bpk = L.*(IL_avg+dIL./2)./(N.*Ae_l); % 127mT
 
-Kc_l = 1.766;
-alpha_l = 1.36;
-beta_l = 2.10;
+Kc_l = 0.009836;
+alpha_l = 1.475;
+beta_l = 2.592;
 
 Ki_l = Kc_l/(2^(beta_l-1)*pi^(alpha_l-1)*(1.1044+6.8244/(alpha_l+1.354)));
 
-Pv_l = Ki_l.*dB.^beta_l.*2.*fs.^alpha_l.*(D.^(1-alpha_l)+(1-D).^(1-alpha_l));
+Pv_l = Ki_l.*(dB/2).^beta_l.*2.*fs.^alpha_l.*(2.*D.^(1-alpha_l) + (1-(2.*D))^(1-alpha_l)) .* 1000;
 Pv_l = double(Pv_l);
 
-P_core_notstein = Pv_l*Ve_l;
+P_core = Pv_l*Ve_l;
 
 %%%%%%%%%%%%%%%%%%%%% Total Losses %%%%%%%%%%%%%%%%%%%%%
-P_L = P_Cdm + P_DC' + P_AC' + P_core_notstein';
+P_L = P_Cdm + P_DC + P_AC + P_core;
 
 
 %% Transformer stackup properties
@@ -389,17 +392,20 @@ C_dm = 1.11762e-10;
 
 Delta_I = dIL;
 % AC resistance losses
-u_s = 1/3*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
-I_RMS_s = sqrt(D.*u_s+(1-D).*u_s);
+u_s1 = 1/3.*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
+u_s2 = 1/3.*(((Iout+Delta_I./2)./2).^2 + ((Iout+Delta_I./2)/2).*((Iout-Delta_I./2)/2) + ((Iout-Delta_I./2)./2).^2);
+I_RMS_s = sqrt(D.*u_s1+(0.5-D).*2.*u_s2);
+
 u1_m = 1/3*(-Im/2).^2; u2_m = 1/3*(Im/2).^2;
 I_RMS_m = sqrt((D./2).*u1_m+(D./2).*u2_m+((1-D)./2).*u2_m+((1-D)./2).*u1_m);
 I_RMS_p = I_RMS_s*n_trafo + I_RMS_m;
+
 P_Rac_p = R_AC_p * I_RMS_p.^2;
 P_Rac_s = R_AC_s .* I_RMS_s.^2;
 P_cu = P_Rac_p + P_Rac_s;
 
 % Core loss
-Pv = Ki .* (Delta_B/2).^beta .* fs.^alpha .* 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
+Pv = Ki .* (Delta_B/2).^beta .* fs.^alpha .* (2.*D^(1-alpha)) .* 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
 P_fe = Pv .* Ve;
 
 % Inductance loss
@@ -423,13 +429,13 @@ R_on = 8.2; R_on_p = R_on + 0.4; R_on_s = R_on + 0.6;
 R_off = 0; R_off_p = R_off + 0.4; R_off_s = R_off + 0.6;
 
 % Gate driver supplies
-V_DD_p = 5; GND_p = -1;
+V_DD_p = 5; GND_p = -2;
 V_DD_s = 6; GND_s = -2;
 
 % Thermal resistance
 Rth_ja = 45;
 
-P_gate_p = Qg_p * (V_DD_p - GND_p)^2 * fs; P_gate_s = Qg_s * (V_DD_s - GND_s)^2 * fs;
+P_gate_p = Qg_p * (V_DD_p - GND_p)^2 * fs * 4; P_gate_s = Qg_s * (V_DD_s - GND_s)^2 * fs * 4;
 
 P_adum_p = P_gate_p * (0.5*(R_DSON_P/(R_on_p+R_DSON_P)) + 0.5*(R_DSON_N/(R_off_p+R_DSON_N)));
 P_adum_s = P_gate_s * (0.5*(R_DSON_P/(R_on_s+R_DSON_P)) + 0.5*(R_DSON_N/(R_off_p+R_DSON_N)));
@@ -437,16 +443,121 @@ P_adum_s = P_gate_s * (0.5*(R_DSON_P/(R_on_s+R_DSON_P)) + 0.5*(R_DSON_N/(R_off_p
 T_adum_p = Rth_ja * 2 * P_adum_p; T_adum_s = Rth_ja * 2 * P_adum_s;
 
 
-%% FET conduction
+%% FET losses
+
+Vo = Vout;
+Io = Iout;
+Po = Vo.*Io;
+Iin = Ip; 
+n = n_trafo;
+d = D;
+deltaI_L = dIL;
+Ilmax = Io+deltaI_L./2;
+Ilmin = Io-deltaI_L./2;
+Iswmax = Ilmax.*n;
+Iswmin=Ilmin.*n;
+
+
+% Primary
+    IpriRMS = I_RMS_p;
+    
+    I_D_turnon      = n.*Ilmin;
+    I_D_turnoff     = n.*Ilmax;
+    V_DS            = Vin/2;    
+    
+    V_GS = V_DD_p;
+    R_gext = R_on_p;
+    
+    % EPC2215
+    %Q_Gtot  = 13.6e-9;  % typ: 13.6e-9 | max: 17.7e-9
+    R_DSon  = 8e-3;     % typ: 6e-3 | max: 8e-3
+    %R_DSon = 8e-3*1.24; % at 63.8 degrees
+    %R_DSon = 8e-3*1.25; % at 65.5 degrees
+    C_GD = 105.65e-12;
+    V_TH = 1.1; % 2.5;
+    C_iss_VDS = 1356e-12; % max: 1790e-12;
+    R_G = R_gext;
+    Q_GD = 2.1e-9;
+    V_gp = 2.1;
+
+    t_ir = R_G * C_iss_VDS*log((V_GS-V_TH)/(V_GS-V_gp));
+    t_vf = R_G * C_GD * V_DS/(V_GS-V_gp);
+    t_vr = R_G * C_GD * V_DS/V_gp;
+    t_if = R_G * C_iss_VDS*log(V_gp/V_TH);
+    
+    P_sw_EPC2215  = 0.5*V_DS.*I_D_turnon*(t_ir+t_vf).*fs + 0.5*V_DS.*I_D_turnoff*(t_if+t_vr).*fs;
+    P_con_EPC2215 = R_DSon * IpriRMS.^2;
+
+    P_tot_EPC2215 = P_con_EPC2215 + P_sw_EPC2215;
+
+    
+% Secondary
+    IsecRMS = I_RMS_s;
+
+    I_D_turnon      = Ilmin/2;
+    I_D_turnoff     = Ilmax/2;
+    V_DS            = n.*Vin;
+    
+    V_GS = V_DD_s;
+    R_gext = R_on_s;
+    
+    
+    % GaN Systems: GS61008T
+    %Q_Gtot  = 8e-9;     % typ: 8e-9 | max: ?
+    %R_DSon  = 9.5e-3;   % typ: 7e-3 | max: 9.5e-3
+    %R_DSon  = 9.5e-3*1.339; % at 66 degrees
+    R_DSon  = 7e-3*1.3969; % at 71 degrees
+    C_GD = 84.965e-12;
+    V_TH = 1.7; % 2.6;
+    C_iss_VDS = 600e-12;
+    R_G = R_gext;
+    Q_GD = 1.7e-9;
+    V_gp = 3.5;
+
+    t_ir = R_G * C_iss_VDS*log((V_GS-V_TH)/(V_GS-V_gp));
+    t_vf = R_G * C_GD * V_DS/(V_GS-V_gp);
+    t_vr = R_G * C_GD * V_DS/V_gp;
+    t_if = R_G * C_iss_VDS*log(V_gp/V_TH);
+
+    P_sw_GS61008T    = 0.5.*V_DS.*I_D_turnon.*(t_ir+t_vf).*fs + 0.5.*V_DS.*I_D_turnoff.*(t_if+t_vr).*fs;
+    P_con_GS61008T   = R_DSon * IsecRMS.^2;
+
+    P_tot_GS61008T   = P_con_GS61008T + P_sw_GS61008T;
+    
+    
+% Total Converter Power Loss
+    P_sw = (P_sw_GS61008T + P_sw_EPC2215)*4;
+    P_con = (P_con_GS61008T + P_con_EPC2215)*4;
+    P_FETs = P_tot_EPC2215*4 + P_tot_GS61008T*4;
+
+    
+%% FET blocking losses
+I_leak_p = 0.5e-3;
+I_leak_s = 50e-6;
+
+P_leak_p = (1-D).*I_leak_p.*Vin*4;
+P_leak_s = D.*I_leak_s.*Vin.*n_trafo*4;
+
+
+%% FET capacitive losses
+
 
 
 %% Efficiency curve with total losses
 
-% Lacking: FET conduction, FET switching, FET capacitors,
-% (blocking losses), body diode losses (deadtime, reverse?)
+% Lacking: FET capacitors, body diode losses (deadtime, reverse?)
 
 Pout = Vout.*Iout;
-P_tot = P_trafo + P_gate_p + P_gate_s + P_L'
+P_tot = P_trafo + P_gate_p + P_gate_s + P_L + P_FETs + P_leak_p + P_leak_s
 
-eff = Pout./(Pout+P_tot)
-plot(Pout,eff)
+eff = Pout./(Pout+P_tot)*100
+
+figure(1)
+plot(Pout, eff, 'LineWidth', 4)
+xlim([100 1500])
+ylim([93 97])
+set(gca, 'FontSize', 18)
+grid on
+title('Power Stage Efficiency', 'FontSize', 26)
+xlabel('Output Power [W]', 'FontSize', 22)
+ylabel('Efficiency [%]', 'FontSize', 22)

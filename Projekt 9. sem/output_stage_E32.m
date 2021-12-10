@@ -88,7 +88,7 @@ P_DC = R_DC*IL_avg^2
 
 %%%%%%%%%%%%%%%%%%%%% R_AC & P_AC %%%%%%%%%%%%%%%%%%%%%
 T = 50; % degrees C
-rho_w = 1.68e-8*(1+0.003862*(T-10));
+rho_w = 1.68e-8*(1+0.003862*(T-20));
 mu_0 = 4e-7*pi;
 skindepth = sqrt(rho_w/(pi*mu_0*2*fs))
 
@@ -183,16 +183,16 @@ L_llk
 dB = D*(Vin*n-Vo)/(N*Ae*2*fs)
 Bpk = L*(IL_avg+dIL/2)/(N*Ae) % 127mT
 % Kc = 1.766;
-%alpha = 1.36;
-%beta = 2.10;
-
+% alpha = 1.36;
+% beta = 2.10;
+% 
 % Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
-
-%syms Ki
-%eq = Pv == Ki*200e-3^beta*300e3^alpha*(D^(1-alpha)+(1-D)^(1-alpha));
-%Ki = solve(eq,Ki)
-%Pv = Ki*dB^beta*2*fs^alpha*(D^(1-alpha)+(1-D)^(1-alpha))
-%Pv = double(Pv)
+% 
+% syms Ki
+% eq = Pv == Ki*200e-3^beta*300e3^alpha*(D^(1-alpha)+(1-D)^(1-alpha));
+% Ki = solve(eq,Ki)
+% Pv = Ki*dB^beta*2*fs^alpha*(D^(1-alpha)+(1-D)^(1-alpha))
+% Pv = double(Pv)
 
 P_core_notstein = Pv*Ve;
 

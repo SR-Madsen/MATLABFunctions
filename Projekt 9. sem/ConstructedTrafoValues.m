@@ -5,9 +5,7 @@ clear, close all, clc;
 %% Core properties
 mu_0 = 1.25663706*10^-6;
 
-
 % a) Core: EPCOS TDK E42/21/15, N87
-
 % Core properties
 mu_r_fe = 1690;
 Ae = 178 * 10^-6; % [m]
@@ -15,9 +13,9 @@ le = 97 * 10^-3; % [m]
 Ve = 17300 * 10^-9; % [m]
 
 % Steinmetz
-Kc = 0.01493;
-alpha = 1.493;
-beta = 2.466;
+Kc = 0.009498;
+alpha = 1.424;
+beta = 2.383;
 Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
 
 % b) Primary + secondary winding: Copper foil, 18mm width, 0.3mm thickness
@@ -52,26 +50,28 @@ stackup = [1, t_foil_p, 1, w_foil_p;
 % Kapton tape thickness = 0.055 mm
 t_kapton = 0.055*10^-3; % [m]
 
+
+%%%%%%%% THIS PART RESPONSIBLE FOR ESTIMATING REAL TRAFO VALUES %%%%%%%%
 % Expected thickness
 sects = 5;
 t_sect = (8*t_kapton + 2*t_foil_p + t_foil_s);
 t_stackup = sects*t_sect + 3*t_kapton
 
 % Actual measured thickness
-t_up_tot = 30e-3; % [m]
-t_down_tot = 13e-3; % [m]
+t_up_tot = 22e-3; % [m]
+t_down_tot = 7e-3; % [m]
 t_sides_tot = t_stackup; % Assumed due to press fitting
 
-Np = 10; Ns = 5;% kapton_pr_sect = 8;
+Np = 10; Ns = 5;
 % Non-copper thickness (total gap thickness)
-t_up_gap = t_up_tot - Np*t_foil_p - Ns*t_foil_s% - sects*kapton_pr_sect*t_kapton
-t_down_gap = t_down_tot - Np*t_foil_p - Ns*t_foil_s% - sects*kapton_pr_sect*t_kapton
+t_up_gap = t_up_tot - Np*t_foil_p - Ns*t_foil_s;
+t_down_gap = t_down_tot - Np*t_foil_p - Ns*t_foil_s;
 
 % Gap thickness for each layer
-t_up_gap_layer = t_up_gap/(Np+Ns)
-t_down_gap_layer = t_down_gap/(Np+Ns)
+t_up_gap_layer = t_up_gap/(Np+Ns);
+t_down_gap_layer = t_down_gap/(Np+Ns);
 
-t_gaps = 1/4*t_up_gap_layer + 1/4*t_down_gap_layer
+t_gaps = 1/4*t_up_gap_layer + 1/4*t_down_gap_layer;
 
 % Find isolation thickness between each layer
 for i = 1:1:length(stackup)
@@ -130,7 +130,7 @@ D = (Vout/Vin)/(2*n_trafo);
 Pout = 1500; % [V]
 Iout = Pout/Vout; % [A]
 
-Lout = 4*10^-6; % [H]
+Lout = 4.5*10^-6; % [H]
 Delta_I = (Vin*n_trafo - Vout)*D/(Lout*2*fs) % [A]
 
 % Physical properties
@@ -213,18 +213,20 @@ C_dm = 1.11762e-10;
 
 % DC resistance losses = 0 W
 % AC resistance losses
-u_s = 1/3*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
-I_RMS_s = sqrt(D.*u_s+(1-D).*u_s);
+u_s1 = 1/3.*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
+u_s2 = 1/3.*(((Iout+Delta_I./2)./2).^2 + ((Iout+Delta_I./2)/2).*((Iout-Delta_I./2)/2) + ((Iout-Delta_I./2)./2).^2);
+I_RMS_s = sqrt(D.*u_s1+(0.5-D).*2.*u_s2);
+
 u1_m = 1/3*(-Im/2).^2; u2_m = 1/3*(Im/2).^2;
 I_RMS_m = sqrt((D./2).*u1_m+(D./2).*u2_m+((1-D)./2).*u2_m+((1-D)./2).*u1_m);
 I_RMS_p = I_RMS_s*n_trafo + I_RMS_m;
-P_Rac_p = R_AC_p * I_RMS_p^2;
-P_Rac_s = R_AC_s * I_RMS_s^2;
+
+P_Rac_p = R_AC_p * I_RMS_p.^2;
+P_Rac_s = R_AC_s .* I_RMS_s.^2;
 P_cu = P_Rac_p + P_Rac_s
 
 % Core loss
-%Pv = Ki * Delta_B^beta * fs^alpha * (2 * D^(1-alpha)); % For Ferroxcube
-Pv = Ki * (Delta_B/2)^beta *fs^alpha * 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
+Pv = Ki * (Delta_B/2)^beta *fs^alpha * (2*D^(1-alpha)) * 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
 P_fe = Pv * Ve
 
 % Inductance loss
