@@ -3,7 +3,7 @@ clear, close all, clc;
 %% Soft-Switching of Secondary Side
 n = 0.5;
 
-L = 4.46e-6;
+L = 4.5e-6;
 
 Coss = 390e-12;
 Cdm_pri = 1.11762e-10; % Change to actual capacitance of trafo?

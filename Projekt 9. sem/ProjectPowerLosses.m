@@ -1,9 +1,11 @@
 %% Total Power Stage Power Losses Across All Output Powers
 clear, close all, clc;
 
+f_array = [50e3, 100e3, 200e3, 300e3];
 
+for s = 1:1:length(f_array)
 %% Converter properties
-fs = 200*10^3; % [Hz]
+fs = f_array(s); % [Hz]
 Ts = 1/fs; % [s]
 Vin = 130; % [V]
 Vout = 60; % [V]
@@ -550,14 +552,19 @@ P_leak_s = D.*I_leak_s.*Vin.*n_trafo*4;
 Pout = Vout.*Iout;
 P_tot = P_trafo + P_gate_p + P_gate_s + P_L + P_FETs + P_leak_p + P_leak_s
 
-eff = Pout./(Pout+P_tot)*100
+eff(s,:) = Pout./(Pout+P_tot)*100
+end
 
 figure(1)
-plot(Pout, eff, 'LineWidth', 4)
+hold on
+for j = 1:1:length(f_array)
+    plot(Pout, eff(j,:), 'LineWidth', 4)
+end
 xlim([100 1500])
-ylim([93 97])
+ylim([92 99])
 set(gca, 'FontSize', 18)
 grid on
+legend('50 kHz', '100 kHz', '200 kHz', '300 kHz')
 title('Power Stage Efficiency', 'FontSize', 26)
 xlabel('Output Power [W]', 'FontSize', 22)
 ylabel('Efficiency [%]', 'FontSize', 22)
