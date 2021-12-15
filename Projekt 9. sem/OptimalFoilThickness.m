@@ -142,7 +142,7 @@ hold on
 grid on
 plot(t_foil_test_p*1000, R_DC_p*1000, t_foil_test_p*1000, R_AC_p*1000, 'LineWidth', 4)
 set(gca, 'FontSize', 18)
-title('Primary side resistance versus foil thickness', 'FontSize', 26)
+title('Winding resistance as a function of thickness', 'FontSize', 26)
 ylabel('Winding Resistance [m\Omega]', 'FontSize', 22)
 xlabel('Winding Thickness [mm]', 'FontSize', 22)
 legend('DC resistance [m\Omega]', 'AC resistance [m\Omega]')

@@ -82,6 +82,15 @@ for i = 1:1:length(stackup)
     end
 end
 
+% %Find isolation thickness between each layer
+% for i = 1:1:length(stackup)
+%     if (stackup(i) == 1 && stackup(i+1) == 2) || (stackup(i) == 2 && stackup(i+1) == 1)
+%         t_iso(i) = 3*t_kapton;
+%     else
+%         t_iso(i) = 2*t_kapton;
+%     end
+% end
+
 % Find length of each turn
 % Bobbin for EPCOS TDK E42/21/15
 w_bobbin_wind = 0.0174; % [m]
@@ -206,8 +215,18 @@ L_lk = double(mu_0/Ip^2 * ( sum(L_lkj) + sum(L_lkk) )) % = Lp + Ls/n^2
 % Parasitic capacitance
 % Found in the capacitive losses Excel sheet
 % For EPCOS TDK
-C_cm = 3.92359e-09;
-C_dm = 1.11762e-10;
+
+% Np = 10, Ns = 5
+%C_cm = 3.92359e-09;
+%C_dm = 1.11762e-10;
+
+% Np = 12, Ns = 6
+%C_cm = 6.63278e-09;
+%C_dm = 1.74596e-10;
+
+% For actual trafo
+C_cm = 1.68848e-09;
+C_dm = 4.51608e-11;
 
 %% Calculate power losses and estimate temperature rise
 
