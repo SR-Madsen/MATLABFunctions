@@ -5,7 +5,7 @@ n = 0.5;
 
 L = 4.5e-6;
 
-Coss = 250e-12;
+Coss = 230e-12;
 Cdm_pri = 1.11762e-10; % Change to actual capacitance of trafo?
 Cdm_sec = Cdm_pri/n^2;
 

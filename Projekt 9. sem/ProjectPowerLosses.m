@@ -569,7 +569,7 @@ P_diodes = 0;
 %% Efficiency curve with total losses
 
 Pout = Vout.*Iout;
-P_tot = P_trafo + P_gate_p + P_gate_s + P_L + P_FETs + P_leak_p + P_leak_s + P_caps + P_diodes;
+P_tot = P_trafo + P_L + P_FETs + P_leak_p + P_leak_s + P_caps;% + P_gate_p + P_gate_s + P_diodes;
 
 eff(s,:) = Pout./(Pout+P_tot)*100;
 end
@@ -597,13 +597,13 @@ title('Power Stage Efficiency', 'FontSize', 26)
 xlabel('Output Power [W]', 'FontSize', 22)
 ylabel('Efficiency [%]', 'FontSize', 22)
 
-% figure(2)
-% plot(Pout, Pout./(Pout+P_trafo)*100, 'LineWidth', 4)
-% xlim([100 1500])
-% ylim([97 100])
-% set(gca, 'FontSize', 18)
-% grid on
-% legend('200 kHz')
-% title('Transformer Efficiency', 'FontSize', 26)
-% xlabel('Output Power [W]', 'FontSize', 22)
-% ylabel('Efficiency [%]', 'FontSize', 22)
+figure(2)
+plot(Pout, Pout./(Pout+P_trafo)*100, 'LineWidth', 4)
+xlim([100 1500])
+ylim([97 100])
+set(gca, 'FontSize', 18)
+grid on
+legend('200 kHz')
+title('Transformer Efficiency', 'FontSize', 26)
+xlabel('Output Power [W]', 'FontSize', 22)
+ylabel('Efficiency [%]', 'FontSize', 22)
