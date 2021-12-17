@@ -1,11 +1,11 @@
 %% Total Power Stage Power Losses Across All Output Powers
 clear, close all, clc;
 
-f_array = [100e3, 200e3, 300e3];
-vo_array = [60, 60, 60];
-vi_array = [130, 130, 130];
+%f_array = [100e3, 200e3, 300e3];
+vo_array = [36.92, 36.92, 36.92];
+vi_array = [80, 80, 80];
 
-%f_array = [200e3, 200e3, 200e3];
+f_array = [200e3, 200e3, 200e3];
 %vo_array = [20, 40, 60];
 %vi_array = [130, 130, 130];
 
@@ -442,14 +442,14 @@ deltaI_L = dIL;
 Ilmax = Io+deltaI_L./2;
 Ilmin = Io-deltaI_L./2;
 Iswmax = Ilmax.*n;
-Iswmin=Ilmin.*n;
+Iswmin = Ilmin.*n;
 
 
 % Primary
     IpriRMS = I_RMS_p;
     
-    I_D_turnon      = n.*Ilmin;
-    I_D_turnoff     = n.*Ilmax;
+    I_D_turnon      = n.*Ilmin-Im/2;
+    I_D_turnoff     = n.*Ilmax+Im/2;
     V_DS            = Vin/2;    
     
     V_GS = V_DD_p;
@@ -457,9 +457,9 @@ Iswmin=Ilmin.*n;
     
     % EPC2215
     %Q_Gtot  = 13.6e-9;  % typ: 13.6e-9 | max: 17.7e-9
-    R_DSon  = 8e-3;     % typ: 6e-3 | max: 8e-3
+    %R_DSon  = 8e-3;     % typ: 6e-3 | max: 8e-3
     %R_DSon = 8e-3*1.24; % at 63.8 degrees
-    %R_DSon = 8e-3*1.25; % at 65.5 degrees
+    R_DSon = 8e-3*1.25; % at 65.5 degrees
     C_GD = 105.65e-12;
     V_TH = 1.1; % 2.5;
     C_iss_VDS = 1356e-12; % max: 1790e-12;
@@ -570,6 +570,8 @@ P_diodes = 0;
 
 Pout = Vout.*Iout;
 P_tot = P_trafo + P_L + P_FETs + P_leak_p + P_leak_s + P_caps;% + P_gate_p + P_gate_s + P_diodes;
+
+P_diss_EPC2215 = (P_tot_EPC2215*4 + P_leak_p + P_caps/2 + P_cdm + P_llk)/4
 
 eff(s,:) = Pout./(Pout+P_tot)*100;
 end

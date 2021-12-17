@@ -8,41 +8,104 @@ h = 0.11e-3; % [m] = 0.11 mm
 h_tot = 1.2e-3; % [m]
 
 
-% Primary PCB
-w_input = 3e-3; % [m] = 3 mm
-l_input = 3.25e-3; %[m] = 3.25 mm
-
-w_csih = 2.5e-3; % [m] = 2.5 mm
-l_csih = 4.5e-3; % [m] = 4.5 mm
-
-w_csil = 2.5e-3; % [m] = 2.5 mm
-l_csil = 7e-3; % [m] = 7 mm
-
-w(1) = w_input; w(2) = w_csih; w(3) = w_csil;
-l(1) = l_input; l(2) = l_csih; l(3) = l_csil;
-
-L_para_pri = mu_0 .* h./w.*l .* (0.27./(1-0.74.*exp(-0.45.*h./w)))
-
-L_highloop_pri = L_para_pri(1);
-L_swnode_pri = L_para_pri(2);
-L_lowloop_pri = L_para_pri(3);
+%% Estimates for Primary PCB
+w_powerloop = 3/5*2.8e-3 + 2/5*0.6e-3;
+l_powerloop = 1/2*17.65e-3 + 1/2 * (5.5e-3 + 13.71e-3);
+w_bottleneck = 0.13e-3; % Bottleneck only present on one half-bridge
+l_bottleneck = 1e-3;
+L_powerloop_bottlenecked = mu_0 * h/w_powerloop * l_powerloop * (0.27/(1-0.74*exp(-0.45*h/w_powerloop))) + ...
+              mu_0 * h/w_bottleneck * l_bottleneck * (0.27/(1-0.74*exp(-0.45*h/w_bottleneck)))
+L_powerloop = mu_0 * h/w_powerloop * l_powerloop * (0.27/(1-0.74*exp(-0.45*h/w_powerloop)))          
 
 
-% Secondary PCB
-w_input = 5e-3; % [m]
-l_input = h_tot + 4e-3; %[m]
+w_hgateon = 1/4 * (0.5e-3 + 1e-3) + 1/2 * (1.8e-3);
+l_hgateon = 1/4 * (3.8e-3 + 2.6e-3) + 1/2 * (8.5e-3);
+L_hgateon = mu_0 * h/w_hgateon * l_hgateon * (0.27/(1-0.74*exp(-0.45*h/w_hgateon)))
 
-w_csih = 4.5e-3; % [m]
-l_csih = 2.75e-3; % [m]
 
-w_csil = 3.5e-3; % [m]
-l_csil = 3.5e-3; % [m]
+w_hgateoff = 1/4 * (1e-3 + 0.5e-3) + 1/2 * (1.8e-3);
+l_hgateoff = 1/2 * (7.4e-3 + 6.5e-3);
+L_hgateoff = mu_0 * h/w_hgateoff * l_hgateoff * (0.27/(1-0.74*exp(-0.45*h/w_hgateoff)))
 
-w(1) = w_input; w(2) = w_csih; w(3) = w_csil;
-l(1) = l_input; l(2) = l_csih; l(3) = l_csil;
 
-L_para_sec = mu_0 .* h./w.*l .* (0.27./(1-0.74.*exp(-0.45.*h./w)))
+w_lgateon = 1/4 * (0.5e-3 + 1.5e-3) + 1/2 * (1.8e-3);
+l_lgateon = 1/2 * (8.5e-3) + 1/2 * (11.2e-3);
+L_lgateon = mu_0 * h/w_lgateon * l_lgateon * (0.27/(1-0.74*exp(-0.45*h/w_lgateon)))
 
-L_highloop_sec = L_para_sec(1);
-L_swnode_sec = L_para_sec(2);
-L_lowloop_sec = L_para_sec(3);
+
+w_lgateoff = 1/4 * (0.5e-3 + 1.5e-3) + 1/2 * (1.8e-3);
+l_lgateoff = 1/2 * (10.8e-3) + 1/2 * (7.8e-3);
+L_lgateoff = mu_0 * h/w_lgateoff * l_lgateoff * (0.27/(1-0.74*exp(-0.45*h/w_lgateoff)))
+
+
+%% Estimates for Secondary PCB
+w_powerloop = 4.5e-3;
+l_powerloop = 1/2 * 12.45e-3 + 1/2 * 36e-3;
+L_powerloop = mu_0 * h_tot/w_powerloop * l_powerloop * (0.27/(1-0.74*exp(-0.45*h_tot/w_powerloop)))          
+
+
+w_hgateon = 1/4 * (0.5e-3 + 1.4e-3) + 1/2 * 2e-3;
+l_hgateon = 1/2 * 7.8e-3 + 1/2 * 8.8e-3;
+L_hgateon = mu_0 * h/w_hgateon * l_hgateon * (0.27/(1-0.74*exp(-0.45*h/w_hgateon)))
+
+
+w_hgateoff = 1/4 * (0.5e-3 + 1.4e-3) + 1/2 * 2e-3;
+l_hgateoff = 1/2 * 9.2e-3 + 1/2 * 10.2e-3;
+L_hgateoff = mu_0 * h/w_hgateoff * l_hgateoff * (0.27/(1-0.74*exp(-0.45*h/w_hgateoff)))
+
+
+w_lgateon = 1/4 * (0.5e-3 + 1.4e-3) + 1/2 * 2e-3;
+l_lgateon = 1/2 * 7.6e-3 + 1/2 * 10e-3;
+L_lgateon = mu_0 * h/w_lgateon * l_lgateon * (0.27/(1-0.74*exp(-0.45*h/w_lgateon)))
+
+
+w_lgateoff = 1/4 * (0.5e-3 + 1.4e-3) + 1/2 * 2e-3;
+l_lgateoff = 1/2 * 9.1e-3 + 1/2 * 10e-3;
+L_lgateoff = mu_0 * h/w_lgateoff * l_lgateoff * (0.27/(1-0.74*exp(-0.45*h/w_lgateoff)))
+
+
+%% Measured for Primary PCB
+pri_vds_data = readmatrix('TestMeasurements/C1Trace00005.dat');
+
+time = pri_vds_data(1000:end-1500,1);
+vds = pri_vds_data(1000:end-1500,2);
+
+t_p2p = 1.3161e-8 - 3.161e-9
+f_osc = 1/t_p2p
+
+Coss = 390*10^-12;
+C_decoup = 2 * (100*10^-9 + 10*10^-9);
+
+syms L
+L_pri = double(solve(f_osc==1/(2*pi*sqrt(L*(Coss+C_decoup))),L))
+
+figure(1)
+plot(time, vds, 'LineWidth', 4)
+grid on
+set(gca, 'FontSize', 18)
+title('Primary Side V_D_S Switching at 200 kHz', 'FontSize', 26)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Voltage [V]', 'FontSize', 22)
+
+%% Measured for Secondary PCB
+sec_vds_data = readmatrix('TestMeasurements/C1Trace00002.dat');
+
+time = sec_vds_data(1500:end-1000,1);
+vds = sec_vds_data(1500:end-1000,2);
+
+t_p2p = 2.1161e-8 - 1.2911e-8;
+f_osc = 1/t_p2p
+
+Coss = 250*10^-12;
+C_snubber = 2.1*10^-6;
+
+syms L
+L_sec = double(solve(f_osc==1/(2*pi*sqrt(L*(Coss))),L))
+
+figure(2)
+plot(time, vds, 'LineWidth', 4)
+grid on
+set(gca, 'FontSize', 18)
+title('Secondary Side V_D_S Switching at 200 kHz', 'FontSize', 26)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Voltage [V]', 'FontSize', 22)
