@@ -40,9 +40,9 @@ le = 97 * 10^-3; % [m]
 Ve = 17300 * 10^-9; % [m]
 
 % Steinmetz
-Kc = 0.01493;
-alpha = 1.493;
-beta = 2.466;
+Kc = 0.009498;
+alpha = 1.424;
+beta = 2.383;
 Ki = Kc/(2^(beta-1)*pi^(alpha-1)*(1.1044+6.8244/(alpha+1.354)));
 
 
@@ -270,19 +270,22 @@ C_dm = 1.11762e-10;
 
 % DC resistance losses = 0 W
 % AC resistance losses
-u_s = 1/3*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
-I_RMS_s = sqrt(D.*u_s+(1-D).*u_s);
+u_s1 = 1/3.*((Iout+Delta_I./2).^2 + (Iout+Delta_I./2).*(Iout-Delta_I./2) + (Iout-Delta_I./2).^2);
+u_s2 = 1/3.*(((Iout+Delta_I./2)./2).^2 + ((Iout+Delta_I./2)/2).*((Iout-Delta_I./2)/2) + ((Iout-Delta_I./2)./2).^2);
+I_RMS_s = sqrt(D.*u_s1+(0.5-D).*2.*u_s2);
+
 u1_m = 1/3*(-Im/2).^2; u2_m = 1/3*(Im/2).^2;
 I_RMS_m = sqrt((D./2).*u1_m+(D./2).*u2_m+((1-D)./2).*u2_m+((1-D)./2).*u1_m);
 I_RMS_p = I_RMS_s*n_trafo + I_RMS_m;
-P_Rac_p = R_AC_p * I_RMS_p^2;
-P_Rac_s = R_AC_s * I_RMS_s^2;
+
+P_Rac_p = R_AC_p * I_RMS_p.^2;
+P_Rac_s = R_AC_s .* I_RMS_s.^2;
 P_cu = P_Rac_p + P_Rac_s
 
 % Core loss
 %Pv = Ki * Delta_B^beta * fs^alpha * (2 * D^(1-alpha)); % For Ferroxcube
-Pv = Ki * (Delta_B/2)^beta *fs^alpha * 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
-P_fe = Pv * Ve
+Pv = Ki .* (Delta_B/2).^beta .* fs.^alpha .* (2.*D^(1-alpha)) .* 1000; % [W/m3] % For EPCOS TDK, push-pull, from Magnetic Design Tool
+P_fe = Pv .* Ve;
 
 % Inductance loss
 P_llk = L_lk * n_trafo^2 * (Iout + Delta_I/2)^2 * fs

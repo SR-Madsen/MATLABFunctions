@@ -143,7 +143,7 @@ Lout = 4.5*10^-6; % [H]
 Delta_I = (Vin*n_trafo - Vout)*D/(Lout*2*fs) % [A]
 
 % Physical properties
-T = 70; % [C]
+T = 22; % [C]
 mu_r_cu = 0.999994;
 rho_cu = 1.68*10^-8*(1+0.003862*(T-20)); % [Ohm/m]
 
@@ -160,7 +160,7 @@ end
 Lm = (mu_0*mu_r_fe*Ae*Np^2)/le
 Im = (D*(1/fs)*Vin)/Lm
 
-Ip = Iout * 2*D * n_trafo + Im/2;
+Ip = Iout * 2*D * n_trafo;
 
 Delta_B = (D * Vin)/(Np * Ae * fs)
 

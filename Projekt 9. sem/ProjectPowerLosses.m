@@ -1,21 +1,10 @@
 %% Total Power Stage Power Losses Across All Output Powers
 clear, close all, clc;
 
-%f_array = [100e3, 200e3, 300e3];
-vo_array = [36.92, 36.92, 36.92];
-vi_array = [80, 80, 80];
-
 f_array = [200e3, 200e3, 200e3];
-%vo_array = [20, 40, 60];
-%vi_array = [130, 130, 130];
+vo_array = [60, 60, 60];
+vi_array = [130, 130, 130];
 
-%f_array = 10e3:10e3:400e3;
-%vo_array = 60*ones(size(f_array));
-%vi_array = 130*ones(size(f_array));
-
-%f_array = [200e3, 200e3, 200e3];
-%vo_array = [60, 60, 60];
-%vi_array = [130, 220, 350];
 
 for s = 1:1:length(f_array)
 %% Converter properties
@@ -309,7 +298,7 @@ end
 Lm = (mu_0*mu_r_fe*Ae*Np^2)/le;
 Im = (D*(1/fs)*Vin)/Lm;
 
-Ip = Iout .* 2.*D .* n_trafo + Im./2;
+Ip = Iout .* 2.*D .* n_trafo;
 
 
 % DC resistances
@@ -369,10 +358,12 @@ for j = 1:1:length(Ip) % Calculate total leakage inductance
 end
 L_lk;
 
+L_lk = 57e-9;
 % Capacitive parasitics calculated in Excel
 % Capacitors do not change as function of duty cycle/output power
 C_cm = 3.92359e-09;
 C_dm = 1.11762e-10;
+C_dm = 38e-12;
 
 
 %% Transformer losses
@@ -456,21 +447,20 @@ Iswmin = Ilmin.*n;
     R_gext = R_on_p;
     
     % EPC2215
-    %Q_Gtot  = 13.6e-9;  % typ: 13.6e-9 | max: 17.7e-9
     %R_DSon  = 8e-3;     % typ: 6e-3 | max: 8e-3
-    %R_DSon = 8e-3*1.24; % at 63.8 degrees
-    R_DSon = 8e-3*1.25; % at 65.5 degrees
+    R_DSon = 10.8e-3; % at 81 degrees
     C_GD = 105.65e-12;
     V_TH = 1.1; % 2.5;
     C_iss_VDS = 1356e-12; % max: 1790e-12;
-    R_G = R_gext;
+    R_G_on = R_gext;
+    R_G_off = R_off_p + R_DSON_N;
     Q_GD = 2.1e-9;
     V_gp = 2.1;
 
-    t_ir = R_G * C_iss_VDS*log((V_GS-V_TH)/(V_GS-V_gp));
-    t_vf = R_G * C_GD * V_DS/(V_GS-V_gp);
-    t_vr = R_G * C_GD * V_DS/V_gp;
-    t_if = R_G * C_iss_VDS*log(V_gp/V_TH);
+    t_ir = R_G_on * C_iss_VDS*log((V_GS-V_TH)/(V_GS-V_gp));
+    t_vf = R_G_on * C_GD * V_DS/(V_GS-V_gp);
+    t_vr = R_G_off * C_GD * V_DS/V_gp;
+    t_if = R_G_off * C_iss_VDS*log(V_gp/V_TH);
     
     P_sw_EPC2215  = 0.5*V_DS.*I_D_turnon*(t_ir+t_vf).*fs + 0.5*V_DS.*I_D_turnoff*(t_if+t_vr).*fs;
     P_con_EPC2215 = R_DSon * IpriRMS.^2;
@@ -490,21 +480,20 @@ Iswmin = Ilmin.*n;
     
     
     % GaN Systems: GS61008T
-    %Q_Gtot  = 8e-9;     % typ: 8e-9 | max: ?
     %R_DSon  = 9.5e-3;   % typ: 7e-3 | max: 9.5e-3
-    %R_DSon  = 9.5e-3*1.339; % at 66 degrees
-    R_DSon  = 7e-3*1.3969; % at 71 degrees
+    R_DSon  = 10.1e-3; % at 77 degrees
     C_GD = 84.965e-12;
     V_TH = 1.7; % 2.6;
     C_iss_VDS = 600e-12;
-    R_G = R_gext;
+    R_G_on = R_gext;
+    R_G_off = R_off_s + R_DSON_N;
     Q_GD = 1.7e-9;
     V_gp = 3.5;
 
-    t_ir = R_G * C_iss_VDS*log((V_GS-V_TH)/(V_GS-V_gp));
-    t_vf = R_G * C_GD * V_DS/(V_GS-V_gp);
-    t_vr = R_G * C_GD * V_DS/V_gp;
-    t_if = R_G * C_iss_VDS*log(V_gp/V_TH);
+    t_ir = R_G_on * C_iss_VDS*log((V_GS-V_TH)/(V_GS-V_gp));
+    t_vf = R_G_on * C_GD * V_DS/(V_GS-V_gp);
+    t_vr = R_G_off * C_GD * V_DS/V_gp;
+    t_if = R_G_off * C_iss_VDS*log(V_gp/V_TH);
 
     P_sw_GS61008T    = 0.5.*V_DS.*I_D_turnon.*(t_ir+t_vf).*fs + 0.5.*V_DS.*I_D_turnoff.*(t_if+t_vr).*fs;
     P_con_GS61008T   = R_DSon * IsecRMS.^2;
@@ -565,13 +554,19 @@ P_diodes = 0;
 % Due to the length of our dead-time, and the ringing in the converter, we
 % will not experience any conduction losses for the body diode.
 
+%% Sense Resistor
+R_sens_pri = 10e-3;
+R_sens_sec = 5e-3;
+
+P_sens_pri = ((I_RMS_p + I_RMS_m).^2 .* R_sens_pri) .* 2;
+P_sens_sec = ((I_RMS_s).^2 .* R_sens_sec) .* 2;
 
 %% Efficiency curve with total losses
 
 Pout = Vout.*Iout;
-P_tot = P_trafo + P_L + P_FETs + P_leak_p + P_leak_s + P_caps;% + P_gate_p + P_gate_s + P_diodes;
+P_tot = P_trafo + P_L + P_FETs + P_leak_p + P_leak_s + P_caps + P_sens_pri + P_sens_sec;% + P_gate_p + P_gate_s + P_diodes;
 
-P_diss_EPC2215 = (P_tot_EPC2215*4 + P_leak_p + P_caps/2 + P_cdm + P_llk)/4
+%P_diss_EPC2215 = (P_tot_EPC2215*4 + P_leak_p + P_caps/2 + P_cdm + P_llk)/4
 
 eff(s,:) = Pout./(Pout+P_tot)*100;
 end
