@@ -31,8 +31,8 @@ L_r = (1/(2*pi*f_sw))^2/C_r; % [H] (resulting in 24 kHz resonance frequency)
 L_g = 2.5*10^-6; % [H]
 
 % Parasitics
-R_Lc = 0.1; % [Ohm]
+R_Lc = 0.05; % [Ohm]
 R_Cc = 1e-6; % [Ohm]
 R_Cr = 1e-6; % [Ohm]
 R_Lr = 1; % [Ohm]
-R_Lg = 0; % [Ohm]
+R_Lg = 0.03; % [Ohm]
