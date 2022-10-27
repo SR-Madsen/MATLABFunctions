@@ -14,7 +14,7 @@ mu = mu_r * mu_0;
 % Inverter characteristics
 V_ph = 230;
 V_ll = 230*sqrt(3); % For star connection
-P_o = 200000;
+P_o = 50000;
 I_ph = P_o/(V_ll*sqrt(3));
 IL_avg = I_ph;
 
@@ -53,7 +53,7 @@ a = atanh(B_sat_begin/B_sat)/H_sat_begin;
 H_linear = [-50000 50000];
 B_linear = mu_0*mu_r*H_linear;
 
-H_nonlinear = -60*H_sat_begin:H_sat_begin/4:60*H_sat_begin;
+H_nonlinear = -110*H_sat_begin:H_sat_begin/4:110*H_sat_begin;
 B_nonlinear = B_sat*tanh(a*H_nonlinear);
 
 figure(1)
@@ -93,9 +93,9 @@ figure(3)
 
 syms x
 l_c = 26^2*(4*pi*10^-7*26*2*2.94e-04)/(0.1437*(1+2.27e-05*(0.0125663706*(x*26)/(0.1437))^1.9167));
-fplot(l_c*1000000, [0 500], 'LineWidth', 4)
+fplot(l_c*1000000, [0 155], 'LineWidth', 4)
 set(gca, 'FontSize', 18)
-xlim([0 500])
+xlim([0 155])
 ylim([0 100])
 grid('on');
 title('Current versus inductance for converter-side inductor', 'FontSize', 26);

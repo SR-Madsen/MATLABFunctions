@@ -8,19 +8,49 @@ syms Rlc Rlg Rcc Lc Lg Cc Zo
 
 %% State-space when vc = C
 syms s
-A = [-(Rlc+Rcc)/Lc Rcc/Lc -1/Lc;
-     Rcc/Lg -(Rlg+Rcc)/Lg 1/Lg;
-     1/Cc -1/Cc 0];
+A = [-(Rlc+Rcc)/Lc -1/Lc Rcc/Lc;
+     1/Cc 0 -1/Cc;
+     Rcc/Lg 1/Lg -(Rlg+Rcc)/Lg];
 
-B = [1/Lc 0;
-     0 -1/Lg;
-     0 0];
+B = [1/Lc Rcc/Lc;
+     0 -1/Cc;
+     0 -(Rlg+Rcc)/Lg];
 
 C = [1 0 0];
-D = [0 0];
+D = [0];
 
 Gs = C*inv((s*eye(3)-A))*B + D;
 Gs_iL_vi = Gs(1,1)
+
+%% Discretization of state-space using ZOH
+% WARNING: WILL FAIL
+% syms Ts Kc
+% Ad = expm(A*Ts);
+% Bd = inv(A)*expm(A*Ts-eye(3))*B;
+% Cd = C;
+% Dd = D;
+% GiL_z = Cd*inv((s*eye(3)-Ad))*Bd+Dd;
+% GiL_z_simple = simplify(expand(GiL_z));
+% 
+% Gi_ol_z = GiL_z*Kc;
+% Gi_cl_z = Gi_ol_z/(1+Gi_ol_z);
+% 
+% % G23_cl as state-space
+% A_G23 = [0 1; -1/Cc*Lg -Rcc/Lg-Rlg/Lg-Zo/Lg];
+% B_G23 = [0; 1];
+% C_G23 = [-(Rcc+Rlg+Zo)/(Cc*Lg) (-Cc*Rcc^2+Lg)/(Cc*Lg)];
+% D_G23 = [Rcc];
+% 
+% Ad_G23 = expm(A_G23*Ts);
+% Bd_G23 = inv(A_G23)*expm(A_G23*Ts-eye(2))*B_G23;
+% Cd_G23 = C_G23;
+% Dd_G23 = D_G23;
+% G23_z = Cd_G23*inv((s*eye(2)-Ad_G23))*Bd_G23+Dd_G23;
+% G23_z_simple = simplify(expand(G23_z));
+% 
+% % Go transfer function
+% Go_nc_z = Gi_cl_z*G23_z;
+%Go_nc_z_simple = simplify(expand(Go_nc_z,'ArithmeticOnly',true,'IgnoreAnalyticConstraints',true))
 
 %% Transfer function for vc/iL
 syms s Ts n z t
@@ -36,12 +66,28 @@ Gf = G2/(1+G2*G3)
 GiL = G1/(1+G1*Gf)
 GiL_simple = simplify(expand(GiL))
 
-% s = 2/Ts*((1-z^-1)/(1+z^-1)) = 2/Ts*((z-1)/(z+1)) (Tustin)
-GiL_z = (1-z^-1)*subs(GiL_simple/s,s,2/Ts*((1-z^-1)/(1+z^-1)));
-GiL_z_simple = simplify(expand(GiL_z))
+Gic = Gv*(1/G2);
+Gic_simple = simplify(expand(Gic))
 
-Gf_z = (1-z^-1)*subs(Gf/s,s,2/Ts*((1-z^-1)/(1+z^-1)));
-Gf_z_simple = simplify(expand(Gf_z))
+% s = 2/Ts*((1-z^-1)/(1+z^-1)) = 2/Ts*((z-1)/(z+1)) (Tustin)
+% GiL_z = (1-z^-1)*subs(GiL_simple/s,s,2/Ts*((1-z^-1)/(1+z^-1)));
+% GiL_z_simple = simplify(expand(GiL_z))
+% 
+% Gf_z = (1-z^-1)*subs(Gf/s,s,2/Ts*((1-z^-1)/(1+z^-1)));
+% Gf_z_simple = simplify(expand(Gf_z))
+
+GiL_inv = simplify(ilaplace(GiL));
+GiL_n = simplify(subs(GiL_inv,t,n*Ts));
+GiL_z = simplify(expand((1-z^-1)*ztrans(GiL_n)))
+
+%% Test til udregning af overføringsfunktionen for iC/iC*
+syms s C L R Z K
+G1 = 1/(L*s+R);
+G2 = 1/(C*s);
+Gf1 = G2/(1+G2/Z);
+Gf2 = G1*Gf1*C*s/(1+G1*Gf1*C*s);
+Gc = K*Gf2/(1+K*Gf2);
+simplify(Gc)
 
 % s = (1-z^-1)/Ts (Backward Euler)
 %sub = (1-z^-1)/Ts;
@@ -65,27 +111,53 @@ vc = ((1/(s*Cc)+Rcc)*(s*Lg+Rlg+Zo)/(1/(s*Cc)+Rcc+s*Lg+Rlg+Zo)) / (s*Lc+Rlc+((1/(
 vc_simple=simplify(expand(vc))
 
 %% Transfer function for Gic
-syms Kc Td
-
-Gic_ol = Kc*GiL_simple%*exp(-s*Td)
-Gic_cl = Gic_ol/(1+Gic_ol);
-Gic_cl_simple = simplify(expand(Gic_cl))
-
-Gic_ol_z = Kc*GiL_z_simple;
-Gic_cl_z = Gic_ol_z/(1+Gic_ol_z);
-Gic_cl_z_simple = simplify(expand(Gic_cl_z))
+% syms Kc Td
+% 
+% Gic_ol = Kc*GiL_simple%*exp(-s*Td)
+% Gic_cl = Gic_ol/(1+Gic_ol);
+% Gic_cl_simple = simplify(expand(Gic_cl))
+% 
+% Gic_ol_z = Kc*GiL_z_simple;
+% Gic_cl_z = Gic_ol_z/(1+Gic_ol_z);
+% Gic_cl_z_simple = simplify(expand(Gic_cl_z))
 
 %% Transfer function for Go
-Go_nc = Gic_cl*Gf;
-Go_nc_simple = simplify(expand(Go_nc))
-
-Go_nc_z = Gf_z_simple*Gic_cl_z_simple;
-Go_nc_simple_z = simplify(expand(Go_nc_z))
+% Go_nc = Gic_cl*Gf;
+% Go_nc_simple = simplify(expand(Go_nc))
+% 
+% Go_nc_z = Gf_z_simple*Gic_cl_z_simple;
+% Go_nc_simple_z = simplify(expand(Go_nc_z))
 
 %% Transfer function for PR controller
-syms Kp Kr omega_0 omega_w
+syms Kp Kr omega_0 omega_w s Ts z omega_warp KT
 G_pr_s = (2*Kr*omega_w*s)/(s^2+2*omega_w*s+omega_0^2)
 
 % s = 2/Ts*((1-z^-1)/(1+z^-1)) = 2/Ts*((z-1)/(z+1)) (Tustin)
-G_pr_z = subs(G_pr_s,s,2/Ts*((1-z^-1)/(1+z^-1)))
+G_pr_z = subs(G_pr_s,s,2/Ts*((1-z^-1)/(1+z^-1)));
+G_pr_z_simple = simplify(expand(G_pr_z));
+
+% s = omega_warp/(tan((omega_warp*Ts)/2))*((1-z^-1)/(1+z^-1)) (pre-warped
+% Tustin)
+G_pr_z = subs(G_pr_s,s,KT*((z-1)/(z+1)));
 G_pr_z_simple = simplify(expand(G_pr_z))
+
+G_pr_test = (2*KT*Kr*omega_w*(z^-1 - z^-2))/(KT^2 - 2*KT^2*z^-1 + KT^2*z^-2 + 2*omega_w*KT - 2*omega_w*KT*z^-2 + omega_0^2 + 2*omega_0^2*z^-1 + omega_0^2*z^-2);
+
+%% Transfer function for lead-lag network
+syms omega_max s kf KT z
+G_ll_s = omega_max*((s+kf*omega_max)/(kf*s+omega_max));
+
+% s = omega_warp/(tan((omega_warp*Ts)/2))*((1-z^-1)/(1+z^-1)) (pre-warped
+% Tustin)
+G_ll_z = subs(G_ll_s,s,KT*((z-1)/(z+1)));
+G_ll_z_simple = simplify(expand(G_ll_z));
+
+G_ll_s = ((1+s*(1/(sqrt(kf)*omega_max)))/(1+s*kf*1/(sqrt(kf)*omega_max)));
+G_ll_z = subs(G_ll_s,s,KT*((z-1)/(z+1)));
+G_ll_z_simple = simplify(expand(G_ll_z))
+
+%% Transfer function for Generalized Integrator
+syms omega_mark omega_c s z
+G_GI_s = (omega_mark^2*s)/(s^2 + omega_c*s + omega_mark^2);
+
+% s = FOH

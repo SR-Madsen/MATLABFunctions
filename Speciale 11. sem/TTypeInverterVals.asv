@@ -148,6 +148,36 @@ G_diff_z = c2d(G_diff_s,Ts,'foh');
 % States: [io; vcap; dvcap/dt]
 % Output: [io; vcap]
 
+C = [1 0 0;
+     0 1 0]; % Output matrix for [iL; vcap]
+D = [0 0;
+     0 0]; % Transmission matrix = 0
+
+% Matrices for using derivative of vcap as state (that is, functional!)
+% Excludes the grid inductor
+A_1 = [0 0 0;
+     0 1 0;
+     -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c) -R_Lc/(L_c*C_c)];
+B_1 = [0 1;
+     0 0;
+     1/(L_c*C_c) -1/C_c];
+
+% Including grid inductor (using dio/dt)
+% A = [-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
+%      0 1 0;
+%      -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c) -R_Lc/(L_c*C_c)];
+% B = [0 0;
+%      0 0;
+%      1/(L_c*C_c) -1/C_c];
+
+% (using dvc/dt) - best performance in simulation
+A = [0 0 0;
+     R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
+     -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c) -R_Lc/(L_c*C_c)];
+B = [0 1;
+     0 L_g/(C_c*R_Cc);
+     1/(L_c*C_c) -1/C_c];
+
 % using both dio/dt and dvc/dt (interesting! Same performance as above)
 A = [-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
      R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
@@ -155,10 +185,6 @@ A = [-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
 B = [0 0;
      0 L_g/(C_c*R_Cc);
      1/(L_c*C_c) -1/C_c];
-C = [1 0 0;
-     0 1 0]; % Output matrix for [io; vcap]
-D = [0 0;
-     0 0]; % Transmission matrix = 0
 
 % ic is non-functional because it is 90 degrees phase-shifted and too low
 % amplitude
@@ -167,9 +193,18 @@ states = {'io' 'vcap' 'dvcap/dt'};
 input = {'vi', 'dio/dt'};
 outputs = {'io' 'vcap'};
 
+% For when used with only one input
+%B = [1/L_c; 0; 0];
+%C = [1 0 0]; % Output matrix for iL output
+%D = [0];
+%input = {'vi'};
+%outputs = {'iL'};
+
 % Create discrete state space system
 lcl_sys = ss(A,B,C,D,'statename',states,'inputname',input,'outputname',outputs);
 lcl_sys_z = c2d(lcl_sys,Ts,'zoh');
+lcl_sys_1 = ss(A_1,B_1,C,D,'statename',states,'inputname',input,'outputname',outputs);
+lcl_sys_z_1 = c2d(lcl_sys_1,Ts,'zoh');
 Ad = lcl_sys_z.A;
 Bd = lcl_sys_z.B;
 
@@ -179,11 +214,13 @@ if rank(obs_matrix)==length(Ad)
     disp('System is observable.')
 end
 
-% Noise estimation
+% Estimate the system noise
 G = [0; 0; 0];
 Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
 Gd = [0;0;0];
-H = [0; 0];
+H = [0; 0]; % For MIMO use [0; 0], only [0] for SISO
 Rw = 1;
 Rv = 1e-3;
 Rwv = 0;
+lcl_sys_z_noise = ss(lcl_sys_z.A,[lcl_sys_z.B, Gd],lcl_sys_z.C, [lcl_sys_z.D, H], Ts);
+%[kalmf, L_K, P] = kalman(lcl_sys_z_noise, Rw, Rv, Rwv);
