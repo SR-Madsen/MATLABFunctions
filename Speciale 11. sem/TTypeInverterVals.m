@@ -77,8 +77,8 @@ L_r = (1/(2*pi*f_sw))^2/C_r; % [H] (resulting in 24 kHz resonance frequency)
 R_Lc = 5e-3; % [Ohm]
 R_Lg = 3e-3; % [Ohm]
 R_Cc = 1e-3; % [Ohm]
-R_Cr = 1e-3; % [Ohm]
-R_Lr = 3e-3; % [Ohm]
+R_Cr = 0.5e-3; % [Ohm]
+R_Lr = 2e-3; % [Ohm]
 
 % Converter-side inductor non-linearity tables
 N_Lc = 26;
@@ -98,7 +98,7 @@ Td = 1.5*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for
 Tcomp = 1e-6; % [s] Estimate of computation and propagation time
 
 % Proportional controller
-Kc = 1;
+Kc = 0.3377;
 
 % Lead-Lag
 s = tf('s');
@@ -124,11 +124,11 @@ KT = [omega_p(1)/(tan(omega_p(1)*Ts/2)) omega_p(2)/(tan(omega_p(2)*Ts/2)) ...
 Kr = [omega_c_o/(4) omega_c_o/(4*3) omega_c_o/(4*5) omega_c_o/(4*7)]; % Resonant gain
 omega_w = [0.1*2*pi 0.1*2*pi 0.1*2*pi 0.1*2*pi]; % Resonance width
 Kp = 1.7674; %1.856; %For capacitor current control % Proportional PR gain
-Klim = 1; % Anti-windup limiting gain
 
 % Maximum current (anti-windup saturation)
 iL_max = ((50000*overcurrent_factor)/(Vout*3))*sqrt(2);
-pr_sat_val = 5*ceil(iL_max+1);
+pr_sat_val = 1.5*ceil(iL_max+1);
+Klim = 1; % Anti-windup limiting gain
 
 % PI Controller [legacy]
 Kpc = 2.0678;
@@ -142,33 +142,65 @@ G_diff_s = tf([omega_mark^2 0],[1 omega_c omega_mark^2]);
 G_diff_z = c2d(G_diff_s,Ts,'foh');
 %bode(G_diff_z)
 
+% Lead-lag based for resonance damping
+% s = tf('s');
+% omega_max_llr = 3.2e4;
+% phi_max_llr = 30; % [degrees]
+% kv_llr = 0.3;
+% 
+% KT_llr = omega_max_llr/(tan(omega_max_llr*Ts/2));
+% kf_llr = (1-sind(phi_max_llr))/(1+sind(phi_max_llr));
+% tau_a_llr = 1/(sqrt(kf_llr)*omega_max_llr);
+% tau_b_llr = kf_llr*tau_a_llr;
+% 
+% G_llr_s = kv_llr*((1+s*tau_a_llr)/(1+s*tau_b_llr));
+% opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max_llr);
+% G_llr_z = c2d(G_llr_s,Ts,opt);
+
 %% Kalman filter (see KalmanFilter.m)
 % State space of plant
-% Input: [vi; dio/dt]
-% States: [io; vcap; dvcap/dt]
-% Output: [io; vcap]
+states = {'io' 'vcap' 'dvcap/dt'};
+inputs = {'vi', 'dio/dt'};
+outputs = {'io' 'vcap'};
 
-% using both dio/dt and dvc/dt (interesting! Same performance as above)
-A = [-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
+% Matrices
+A = [0 0 0;
      R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
-     -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c) -R_Lc/(L_c*C_c)];
-B = [0 0;
+     -R_Lc/(L_c*C_c) -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c)];
+B = [0 1;
      0 L_g/(C_c*R_Cc);
      1/(L_c*C_c) -1/C_c];
 C = [1 0 0;
      0 1 0]; % Output matrix for [io; vcap]
 D = [0 0;
-     0 0]; % Transmission matrix = 0
+     0 0];
 
-% ic is non-functional because it is 90 degrees phase-shifted and too low
-% amplitude
+% % Enhanced matrix?
+A = [0 0 0; %-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
+     R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
+     -R_Lc/(L_c) -1/(L_c) -(R_Lc/L_c+R_Cc/L_c)];
+B = [0 1; %0 0;
+     0 L_g/(C_c*R_Cc);
+     1/(L_c) -1/C_c];
+C = [1 0 C_c;
+     0 1 R_Cc*C_c]; % Output matrix for [iL; vc]
+D = [0 0;
+     0 0];
+% % Attempt at other matrix that almost works
+% A = [-R_Lc/L_c -1/L_c -(C_c*R_Cc)/L_c;
+%      -R_Lg/(R_Lg*C_c+R_Cc*C_c) -1/(R_Lg*C_c+R_Cc*C_c) 0;
+%      -R_Lc/(L_c*C_c) -1/(L_c*C_c) -R_Cc/L_c];
+% B = [1/L_c 0;
+%      0 L_g/(R_Lg*C_c+R_Cc*C_c);
+%      1/(L_c*C_c) -1/C_c];
+% C = [1 0 0;
+%      0 1 R_Cc*C_c]; % Output matrix for [iL; vc]
+% D = [0 0;
+%      0 0];
 
-states = {'io' 'vcap' 'dvcap/dt'};
-input = {'vi', 'dio/dt'};
-outputs = {'io' 'vcap'};
 
 % Create discrete state space system
-lcl_sys = ss(A,B,C,D,'statename',states,'inputname',input,'outputname',outputs);
+lcl_sys = ss(A,B,C,D,'statename',states,'inputname',inputs,'outputname',outputs);
 lcl_sys_z = c2d(lcl_sys,Ts,'zoh');
 Ad = lcl_sys_z.A;
 Bd = lcl_sys_z.B;
@@ -181,8 +213,9 @@ end
 
 % Noise estimation
 G = [0; 0; 0];
-Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
-Gd = [0;0;0];
+[Adg Gd] = c2d(A,G,Ts);
+%Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
+%Gd = [0;0;0];
 H = [0; 0];
 Rw = 1;
 Rv = 1e-3;

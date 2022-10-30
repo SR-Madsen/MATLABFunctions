@@ -16,7 +16,7 @@ fs = 2*fsw;
 Ts = 1/(fs);
 Td = 0.75*1/fsw;
 %fres = 1/(2*pi)*sqrt((Lg+Lc)/(Lg*Lc*Cc)); % Apparently not though
-%fres = 1/(2*pi*sqrt((Lc+Lg)*Cc));
+fres = 1/(2*pi*sqrt((Lc+Lg)*Cc));
 
 % Fundamental for three phases
 fo = 50; % [Hz]

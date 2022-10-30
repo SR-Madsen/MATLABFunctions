@@ -31,12 +31,12 @@ D = [0, 0; 0, 0];
 
 % Matrices for using derivative of vcap as state (that is, functional!)
 % Excludes the grid inductor
-A_1 = [0 0 0;
-     0 1 0;
-     -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c) -R_Lc/(L_c*C_c)];
-B_1 = [0 1;
-     0 0;
-     1/(L_c*C_c) -1/C_c];
+% A_1 = [0 0 0;
+%      0 1 0;
+%      -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c) -R_Lc/(L_c*C_c)];
+% B_1 = [0 1;
+%      0 0;
+%      1/(L_c*C_c) -1/C_c];
 
 % Including grid inductor (using dio/dt)
 % A = [-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
@@ -95,6 +95,7 @@ lcl_sys_z = c2d(lcl_sys,Ts,'zoh');
 G = [0; 0; 0];
 Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
 Gd = [0;0;0];
+[Agd, Gd] = c2d(A,G,Ts);
 H = [0; 0]; % For MIMO use [0; 0], only [0] for SISO
 Rw = 1;
 Rv = 1e-3;
