@@ -93,12 +93,13 @@ lcl_sys_z = c2d(lcl_sys,Ts,'zoh');
 
 % Estimate the system noise
 G = [0; 0; 0];
-Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
-Gd = [0;0;0];
+%Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
+%Gd = [0;0;0];
 [Agd, Gd] = c2d(A,G,Ts);
 H = [0; 0]; % For MIMO use [0; 0], only [0] for SISO
-Rw = 1;
-Rv = 1e-3;
-Rwv = 0;
-lcl_sys_z_noise = ss(lcl_sys_z.A,[lcl_sys_z.B, Gd],lcl_sys_z.C, [lcl_sys_z.D, H], Ts);
-%[kalmf, L_K, P] = kalman(lcl_sys_z_noise, Rw, Rv, Rwv);
+Q = 1; % Aka Rw. Square matrix of amount of noise inputs.
+R = 1e-3; % Aka Rv. Diagonal matrix of amount of plant inputs.
+N = 0; % Aka Rwv. Square matrix of noise input cross-covariance.
+
+%lcl_sys_z_noise = ss(lcl_sys_z.A,[lcl_sys_z.B, Gd],lcl_sys_z.C, [lcl_sys_z.D, H], Ts);
+%[kalmf, L_K, P] = kalman(lcl_sys_z_noise, Q, R, N);

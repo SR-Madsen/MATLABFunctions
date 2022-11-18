@@ -93,9 +93,16 @@ figure(3)
 
 syms x
 l_c = 26^2*(4*pi*10^-7*26*2*2.94e-04)/(0.1437*(1+2.27e-05*(0.0125663706*(x*26)/(0.1437))^1.9167));
-fplot(l_c*1000000, [0 155], 'LineWidth', 4)
+l_c = 3.9813/((2.2736648267223381421480600353473*x)^(1.9167) + 44052.863436123348947148770093918);
+fplot(l_c*1000000, [0 225], 'LineWidth', 4)
+
+% Linearization
+%linear_l_c = 90.375 - 90.375*x*1/218;
+%hold on
+%fplot(linear_l_c, [0 225], 'LineWidth', 4)
+
 set(gca, 'FontSize', 18)
-xlim([0 155])
+xlim([0 225])
 ylim([0 100])
 grid('on');
 title('Current versus inductance for converter-side inductor', 'FontSize', 26);

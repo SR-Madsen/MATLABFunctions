@@ -3,17 +3,17 @@ clear, close all, clc;
 %% Plant Continuous
 % Components
 Lc = 90.375*10^-6;
-Lc = 33.15*10^-6; % Worst-case at maximum load (109.5 ARMS = 155 A peak)
+%Lc = 26.989*10^-6; % Worst-case at maximum load (181 A peak)
 Lg = 2*10^-6;
 Cc = 30*10^-6;
-Rlc = 5e-3;
-Rlg = 3e-3;
-Rcc = 1e-3;
+Rlc = 5.6e-3;
+Rlg = 5.6e-3;
+Rcc = 9e-3;
 
 % Timings
 fsw = 24000;
-fs = 2*fsw;
-Ts = 1/(fs);
+fs = 4*fsw;
+Ts = 1/fs;
 Td = 0.75*1/fsw;
 %fres = 1/(2*pi)*sqrt((Lg+Lc)/(Lg*Lc*Cc)); % Apparently not though
 fres = 1/(2*pi*sqrt((Lc+Lg)*Cc));
@@ -28,11 +28,11 @@ Io_max_3p = Po_max_3p/(3*Vo);
 Po_max_1p = 50000/3;
 Io_max_1p = Po_max_1p/Vo;
 
-% Maximum load for current controller (150% of nominal load)
-k_overcurr = 1.5;
+% Maximum load for current controller (300% of nominal load for transients)
+k_overcurr = 3;
 %Zo = (Vo*sqrt(3))/(Io_max_3p*k_overcurr); % For three phases
-Zo = Vo/(Io_max_1p*k_overcurr); % For one phase
-
+Zo = (Vo*sqrt(2))/(Io_max_1p*k_overcurr); % For one phase
+Zo_max = 1e9;
 
 % Transfer functions
 Gil_num = [Cc*Lg Cc*(Rlg+Rcc+Zo) 1];
@@ -41,6 +41,13 @@ Gil_den = [Cc*Lg*Lc ...
            Lg+Lc+Cc*Rcc*(Rlg+Zo)+Cc*Rlc*(Rlg+Rcc+Zo) ...
            Rlc + Rlg + Zo];
 Gil = tf(Gil_num, Gil_den);
+
+Gil_num_max = [Cc*Lg Cc*(Rlg+Rcc+Zo_max) 1];
+Gil_den_max = [Cc*Lg*Lc ...
+           Cc*(Lg*(Rcc+Rlc)+Lc*(Rlg+Rcc+Zo_max)) ...
+           Lg+Lc+Cc*Rcc*(Rlg+Zo_max)+Cc*Rlc*(Rlg+Rcc+Zo_max) ...
+           Rlc + Rlg + Zo_max];
+Gil_max = tf(Gil_num_max, Gil_den_max);
 
 Gic_num = [Cc*Lg Cc*(Rlg+Zo) 0];
 Gic_den = [Cc*Lg*Lc ...
@@ -62,18 +69,18 @@ G34_cl_s = feedback(G3,G4,-1);
 G234_cl_s = feedback(G2,G34_cl_s,-1);
 G2_z = c2d(G2,Ts,'zoh');
 G234_cl_z = c2d(G234_cl_s,Ts,'zoh');
-%Gil = feedback(G1,G234_cl_s,-1);
+%Gil_t = feedback(G1,G234_cl_s,-1);
 Gvc = feedback(G1*G234_cl_s,1,-1);
 %Gic = series(Gvc,1/G2); % Inflates the order, do not use.
 
 
 %% Proportional Current Controller Discrete Design
 % FOR INDUCTOR CURRENT
-omega_c_i = 0.175*fsw*2*pi;
+omega_c_i = 3.35e4; %0.2*fsw*2*pi;
 
 % Differentiator
-omega_max = omega_c_i;
-phi_max = 30; % [degrees]
+omega_max = 3.35e4; %3.6e4;
+phi_max = 40; % [degrees]
 kf = (1-sind(phi_max))/(1+sind(phi_max));
 tau_a = 1/(sqrt(kf)*omega_max);
 tau_b = kf*tau_a;
@@ -81,8 +88,37 @@ G_diff_s = ((1+s*tau_a)/(1+s*tau_b));
 opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
 G_diff_z = c2d(G_diff_s,Ts,opt);
 
+% Harmonic compensators
+omega_p5 = fo*2*pi*5;
+omega_w5 = 0.1*2*pi;
+Kr5 = omega_c_i/(4*5*15);
+omega_p7 = fo*2*pi*7;
+omega_w7 = 0.1*2*pi;
+Kr7 = omega_c_i/(4*7*10);
+
+% G_pr_r_5_z = (2*exp(Ts*omega_w5)^2*(omega_w5^2-omega_p5^2)^(1/2)*Kr5*Ts*omega_w5 - ...
+%     z^-1*2*Kr5*Ts*omega_w5*exp(Ts*omega_w5)*(omega_w5*sinh(Ts*(omega_w5^2-omega_p5^2)^(1/2))+...
+%     cosh(Ts*(omega_w5^2-omega_p5^2)^(1/2))*(omega_w5^2-omega_p5^2)^(1/2)))/...
+%     (exp(2*Ts*omega_w5)*(omega_w5^2-omega_p5^2)^(1/2) - ...
+%     z^-1*((omega_w5^2-omega_p5^2)^(1/2)*2*exp(Ts*omega_w5)*...
+%     cosh(Ts*(omega_w5^2-omega_p5^2)^(1/2)))+z^-2*(omega_w5^2-omega_p5^2)^(1/2));
+% G_pr_r_7_z = (2*exp(Ts*omega_w7)^2*(omega_w7^2-omega_p7^2)^(1/2)*Kr7*Ts*omega_w7 - ...
+%     z^-1*2*Kr7*Ts*omega_w7*exp(Ts*omega_w7)*(omega_w7*sinh(Ts*(omega_w7^2-omega_p7^2)^(1/2))+...
+%     cosh(Ts*(omega_w7^2-omega_p7^2)^(1/2))*(omega_w7^2-omega_p7^2)^(1/2)))/...
+%     (exp(2*Ts*omega_w7)*(omega_w7^2-omega_p7^2)^(1/2) - ...
+%     z^-1*((omega_w7^2-omega_p7^2)^(1/2)*2*exp(Ts*omega_w7)*...
+%     cosh(Ts*(omega_w7^2-omega_p7^2)^(1/2)))+z^-2*(omega_w7^2-omega_p7^2)^(1/2));
+G_pr_r_5_z = -(2*Kr5*Ts*omega_w5*z*exp(Ts*omega_w5)*(omega_w5*sinh(Ts*(omega_w5^2 - omega_p5^2)^(1/2)) ...
+             + cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*(omega_w5^2 - omega_p5^2)^(1/2) ... 
+             - z*exp(Ts*omega_w5)*(omega_w5^2 - omega_p5^2)^(1/2)))/((omega_w5^2 - omega_p5^2)^(1/2) ...
+             *(exp(2*Ts*omega_w5)*z^2 - 2*exp(Ts*omega_w5)*cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*z + 1));
+G_pr_r_7_z = -(2*Kr7*Ts*omega_w7*z*exp(Ts*omega_w7)*(omega_w7*sinh(Ts*(omega_w7^2 - omega_p7^2)^(1/2)) ...
+             + cosh(Ts*(omega_w7^2 - omega_p7^2)^(1/2))*(omega_w7^2 - omega_p7^2)^(1/2) ... 
+             - z*exp(Ts*omega_w7)*(omega_w7^2 - omega_p7^2)^(1/2)))/((omega_w7^2 - omega_p7^2)^(1/2) ...
+             *(exp(2*Ts*omega_w7)*z^2 - 2*exp(Ts*omega_w7)*cosh(Ts*(omega_w7^2 - omega_p7^2)^(1/2))*z + 1));
+
 % Inner loop without control
-Gi_nc_z = series(c2d(Gil,Ts,'zoh'),G_diff_z); % If lead-lag in series
+Gi_nc_z = series(c2d(Gil,Ts,'zoh'),G_diff_z+G_pr_r_5_z+G_pr_r_7_z); % If lead-lag in series
 %Gi_nc_z = feedback(feedback(c2d(Gil,Ts,'zoh'),1,-1)*G234_cl_z,G_diff_z,1); % If lead-lag in vc feedback
 %Gi_nc_z = c2d(Gil,Ts,'zoh'); % If lead-lag is on PR controller
 figure(1)
@@ -115,41 +151,41 @@ omega_i_cl_z = bandwidth(Gi_cl_z)
 % plot(Kc,omega_i_cl_z)
 
 %% Proportional Current Controller Discrete Design
-% FOR CAPACITOR CURRENT
-omega_c_i = 0.2*fsw*2*pi;
-
-% Differentiator
-omega_max = omega_c_i;
-phi_max = 30; % [degrees]
-kf = (1-sind(phi_max))/(1+sind(phi_max));
-tau_a = 1/(sqrt(kf)*omega_max);
-tau_b = kf*tau_a;
-G_diff_s = ((1+s*tau_a)/(1+s*tau_b));
-opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
-G_diff_z = c2d(G_diff_s,Ts,opt);
-
-% Inner loop without control
-Gi_nc_z = series(c2d(Gic,Ts,'zoh'),G_diff_z); % If lead-lag in series
-%Gi_nc_z = feedback(feedback(c2d(Gil,Ts,'zoh'),1,-1)*G234_cl_z,G_diff_z,1); % If lead-lag in vc feedback
-%Gi_nc_z = c2d(Gil,Ts,'zoh'); % If lead-lag is on PR controller
-figure(1)
-[mag, phase] = bode(Gi_nc_z,omega_c_i);
-margin(Gi_nc_z)
-
-% Inner loop with control, open loop
-Kc = 1/mag;
-Gi_z = series(Kc,Gi_nc_z);
-
-figure(2)
-[Gm,Pm,omega_i_gm,omega_i_pm] = margin(Gi_z);
-PM_i_z = Pm-omega_i_pm*Td*180/pi
-margin(Gi_z)
-
-% Inner loop with control, closed-loop
-Gi_cl_z = feedback(Gi_z,1,-1);
-figure(3)
-margin(Gi_cl_z)
-omega_i_cl_z = bandwidth(Gi_cl_z)
+% % FOR CAPACITOR CURRENT
+% omega_c_i = 0.2*fsw*2*pi;
+% 
+% % Differentiator
+% omega_max = omega_c_i;
+% phi_max = 30; % [degrees]
+% kf = (1-sind(phi_max))/(1+sind(phi_max));
+% tau_a = 1/(sqrt(kf)*omega_max);
+% tau_b = kf*tau_a;
+% G_diff_s = ((1+s*tau_a)/(1+s*tau_b));
+% opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
+% G_diff_z = c2d(G_diff_s,Ts,opt);
+% 
+% % Inner loop without control
+% Gi_nc_z = series(c2d(Gic,Ts,'zoh'),G_diff_z); % If lead-lag in series
+% %Gi_nc_z = feedback(feedback(c2d(Gil,Ts,'zoh'),1,-1)*G234_cl_z,G_diff_z,1); % If lead-lag in vc feedback
+% %Gi_nc_z = c2d(Gil,Ts,'zoh'); % If lead-lag is on PR controller
+% figure(1)
+% [mag, phase] = bode(Gi_nc_z,omega_c_i);
+% margin(Gi_nc_z)
+% 
+% % Inner loop with control, open loop
+% Kc = 1/mag;
+% Gi_z = series(Kc,Gi_nc_z);
+% 
+% figure(2)
+% [Gm,Pm,omega_i_gm,omega_i_pm] = margin(Gi_z);
+% PM_i_z = Pm-omega_i_pm*Td*180/pi
+% margin(Gi_z)
+% 
+% % Inner loop with control, closed-loop
+% Gi_cl_z = feedback(Gi_z,1,-1);
+% figure(3)
+% margin(Gi_cl_z)
+% omega_i_cl_z = bandwidth(Gi_cl_z)
 
 %% Proportional-Integrator Current Controller Discrete Design
 %omega_c_i = 0.2*fsw*2*pi;
@@ -197,8 +233,7 @@ omega_i_cl_z = bandwidth(Gi_cl_z)
 % plot(Kc,omega_i_cl_z)
 
 %% Proportional-Resonant Voltage Controller Discrete Design
-omega_c_o = fo*60*2*pi; % Capacitor current control
-omega_c_o = 3e4; % Inductor current control
+omega_c_o = fo*20*2*pi;
 
 % Outer loop without control
 
@@ -220,7 +255,7 @@ figure(4)
 margin(Go_nc_z)
 
 % Determining Kp
-Kp = 1/mag;
+Kp = 1/mag/(10^(1.14/20));
 Gov_p_control_z = Go_nc_z*Kp;
 figure(5)
 [Gm, Pm] = margin(Gov_p_control_z);
@@ -230,65 +265,132 @@ figure(5)
 margin(Gov_p_control_z)
 
 % Outer loop with control, open-loop
-omega_p = [];
-Kr = [];
-KT = [];
-omega_w = [];
+omega_p = fo*2*pi;
+Kr = omega_c_o/2;
 omega_o = fo*2*pi;
+omega_w = 0.1*2*pi;
 
-for h = 1:2:7
-    omega_p(end+1) = fo*2*pi*h;
-    Kr(end+1) = (omega_c_o/(4*h));
-    KT(end+1) = omega_p(end)/(tan(omega_p(end)*Ts/2));
-    omega_w(end+1) = 0.1*2*pi;
-end
-G_pr_r_z = (2*KT(1)*Kr(1)*omega_w(1)*(1-z^-2))/ ...
-           (KT(1)^2 + 2*omega_w(1)*KT(1) + omega_o^2 - (2*KT(1)^2 - 2*omega_o^2)*z^-1 ...
-            + (KT(1)^2-2*omega_w(1)*KT(1)+omega_o^2)*z^-2);
+%KT = omega_p/(tan(omega_p*Ts/2));
+% G_pr_r_z = (2*KT(1)*Kr(1)*omega_w(1)*(1-z^-2))/ ...
+%            (KT(1)^2 + 2*omega_w(1)*KT(1) + omega_o^2 - (2*KT(1)^2 - 2*omega_o^2)*z^-1 ...
+%             + (KT(1)^2-2*omega_w(1)*KT(1)+omega_o^2)*z^-2);
+% 
+% G_pr_r_3_z = (2*KT(2)*Kr(2)*omega_w(2)*(1-z^-2))/ ...
+%            (KT(2)^2 + 2*omega_w(2)*KT(2) + (3*omega_o)^2 - (2*KT(2)^2 - 2*(3*omega_o)^2)*z^-1 ...
+%             + (KT(2)^2-2*omega_w(2)*KT(2)+(3*omega_o)^2)*z^-2);
+% 
+% G_pr_r_5_z = (2*KT(3)*Kr(3)*omega_w(3)*(1-z^-2))/ ...
+%            (KT(3)^2 + 2*omega_w(3)*KT(3) + (5*omega_o)^2 - (2*KT(3)^2 - 2*(5*omega_o)^2)*z^-1 ...
+%             + (KT(3)^2-2*omega_w(3)*KT(3)+(5*omega_o)^2)*z^-2);
+% 
+% G_pr_r_7_z = (2*KT(4)*Kr(4)*omega_w(4)*(1-z^-2))/ ...
+%            (KT(4)^2 + 2*omega_w(4)*KT(4) + (7*omega_o)^2 - (2*KT(4)^2 - 2*(7*omega_o)^2)*z^-1 ...
+%             + (KT(4)^2-2*omega_w(4)*KT(4)+(7*omega_o)^2)*z^-2);
+%
+% G_pr_r_z = -(2*Kr(1)*omega_w(1)*z*exp(Ts*omega_w(1))* ...
+%            (omega_w(1)*sinh(Ts*(omega_w(1)^2 - omega_p(1)^2)^(1/2)) + ...
+%            cosh(Ts*(omega_w(1)^2 - omega_p(1)^2)^(1/2))* ...
+%            (omega_w(1)^2 - omega_p(1)^2)^(1/2) - z*exp(Ts*omega_w(1))* ...
+%            (omega_w(1)^2 - omega_p(1)^2)^(1/2)))/ ...
+%            ((omega_w(1)^2 - omega_p(1)^2)^(1/2)* ...
+%            (exp(2*Ts*omega_w(1))*z^2 - 2*exp(Ts*omega_w(1))* ...
+%            cosh(Ts*(omega_w(1)^2 - omega_p(1)^2)^(1/2))*z + 1));
+%
+%G_pr_r_z = Ts*(1-z^-1*cos(omega_p(1)*Ts))/(1-2*z^-1*cos(omega_p(1)*Ts)+z^-2);
+%
+%G_pr_s = (2*Kr(1)*omega_w(1)*s)/(s^2+2*omega_w(1)*s+omega_p(1)^2);
+%G_pr_z = c2d(G_pr_s,Ts,'impulse')
+%
+% G_pr_r_z = (2*exp(Ts*omega_w)^2*(omega_w^2-omega_p^2)^(1/2)*Kr*Ts*omega_w - ...
+%     z^-1*2*Kr*Ts*omega_w*exp(Ts*omega_w)*(omega_w*sinh(Ts*(omega_w^2-omega_p^2)^(1/2))+...
+%     cosh(Ts*(omega_w^2-omega_p^2)^(1/2))*(omega_w^2-omega_p^2)^(1/2)))/...
+%     (exp(2*Ts*omega_w)*(omega_w^2-omega_p^2)^(1/2) - ...
+%     z^-1*((omega_w^2-omega_p^2)^(1/2)*2*exp(Ts*omega_w)*...
+%     cosh(Ts*(omega_w^2-omega_p^2)^(1/2)))+z^-2*(omega_w^2-omega_p^2)^(1/2));
 
-G_pr_r_3_z = (2*KT(2)*Kr(2)*omega_w(2)*(1-z^-2))/ ...
-           (KT(2)^2 + 2*omega_w(2)*KT(2) + (3*omega_o)^2 - (2*KT(2)^2 - 2*(3*omega_o)^2)*z^-1 ...
-            + (KT(2)^2-2*omega_w(2)*KT(2)+(3*omega_o)^2)*z^-2);
+G_pr_r_z = -(2*Kr*Ts*omega_w*z*exp(Ts*omega_w)*(omega_w*sinh(Ts*(omega_w^2 - omega_p^2)^(1/2)) ...
+        + cosh(Ts*(omega_w^2 - omega_p^2)^(1/2))*(omega_w^2 - omega_p^2)^(1/2) ... 
+        - z*exp(Ts*omega_w)*(omega_w^2 - omega_p^2)^(1/2)))/((omega_w^2 - omega_p^2)^(1/2) ...
+        *(exp(2*Ts*omega_w)*z^2 - 2*exp(Ts*omega_w)*cosh(Ts*(omega_w^2 - omega_p^2)^(1/2))*z + 1));
 
-G_pr_r_5_z = (2*KT(3)*Kr(3)*omega_w(3)*(1-z^-2))/ ...
-           (KT(3)^2 + 2*omega_w(3)*KT(3) + (5*omega_o)^2 - (2*KT(3)^2 - 2*(5*omega_o)^2)*z^-1 ...
-            + (KT(3)^2-2*omega_w(3)*KT(3)+(5*omega_o)^2)*z^-2);
-
-G_pr_r_7_z = (2*KT(4)*Kr(4)*omega_w(4)*(1-z^-2))/ ...
-           (KT(4)^2 + 2*omega_w(4)*KT(4) + (7*omega_o)^2 - (2*KT(4)^2 - 2*(7*omega_o)^2)*z^-1 ...
-            + (KT(4)^2-2*omega_w(4)*KT(4)+(7*omega_o)^2)*z^-2);
-
-Gov_ol_z = series(Go_nc_z,Kp+G_pr_r_z+G_pr_r_5_z+G_pr_r_7_z);
+Gov_ol_z = series(Go_nc_z,Kp+G_pr_r_z);
 [Gm,Pm,omega_o_g,omega_o_p] = margin(Gov_ol_z);
 Pm_o_z = Pm-omega_o_p*Td*180/pi
 figure(6)
 margin(Gov_ol_z)
-
-%hold on
-%Go_nc_z = series(Gi_cl_z*G_diff_z,G234_cl_z);
-%Gov_ol_z = series(Go_nc_z,Kp+G_pr_r_z+G_pr_r_5_z+G_pr_r_7_z);
-%margin(Gov_ol_z)
 
 % Outer loop with control, closed-loop
 G_ov_cl_z = feedback(Gov_ol_z,1,-1);
 figure(7)
 margin(G_ov_cl_z)
 
+% figure(15)
+% opt = bodeoptions;
+% opt.Grid = 'on';
+% opt.Title.String = 'Bode plot of discretized non-ideal Resonant Controller';
+% opt.FreqUnits = 'Hz';
+% opt.Title.FontSize = 26;
+% opt.XLabel.FontSize = 22;
+% opt.YLabel.FontSize = 22;
+% 
+% bodeplot(G_pr_r_z, opt)
+% Fh = gcf;                                                   % Handle To Current Figure
+% Kids = Fh.Children;                                         % Children
+% AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
+% Ax1 = AxAll(1);                                             % First Set Of Axes
+% LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
+% LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
+% Ax2 = AxAll(2);                                             % Second Set Of Axes
+% LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
+% LinesAx2(2).LineWidth = 4;
+
 %% Proportional Current Controller Root Locus Discrete Design
 % FOR INDUCTOR CURRENT
-omega_c_i = 0.175*fsw*2*pi;
+omega_c_i = 0.2*fsw*2*pi;
+%omega_c_i = 3.35e4;
 
 % Differentiator
-omega_max = 2.1e3;
-phi_max = 60; % [degrees]
-kf = (1-sind(phi_max))/(1+sind(phi_max));
-tau_a = 1/(sqrt(kf)*omega_max);
-tau_b = kf*tau_a;
-G_diff_s = ((1+s*tau_a)/(1+s*tau_b));
-opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
-G_diff_z = c2d(G_diff_s,Ts,opt);
+%omega_max = omega_c_i;
+%phi_max = 40; % [degrees]
+%kf = (1-sind(phi_max))/(1+sind(phi_max));
+%tau_a = 1/(sqrt(kf)*omega_max);
+%tau_b = kf*tau_a;
+%G_diff_s = ((1+s*tau_a)/(1+s*tau_b));
+%opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
+%G_diff_z = c2d(G_diff_s,Ts,opt);
 
-Gi_nc_z = series(c2d(Gil,Ts,'zoh'),G_diff_z); % If lead-lag in series
+% Harmonic compensators
+omega_p5 = fo*2*pi*5;
+omega_w5 = 0.1*2*pi;
+Kr5 = omega_c_i/(4*5*15);
+omega_p7 = fo*2*pi*7;
+omega_w7 = 0.1*2*pi;
+Kr7 = omega_c_i/(4*7*10);
+
+% G_pr_r_5_z = (2*exp(Ts*omega_w5)^2*(omega_w5^2-omega_p5^2)^(1/2)*Kr5*Ts*omega_w5 - ...
+%     z^-1*2*Kr5*Ts*omega_w5*exp(Ts*omega_w5)*(omega_w5*sinh(Ts*(omega_w5^2-omega_p5^2)^(1/2))+...
+%     cosh(Ts*(omega_w5^2-omega_p5^2)^(1/2))*(omega_w5^2-omega_p5^2)^(1/2)))/...
+%     (exp(2*Ts*omega_w5)*(omega_w5^2-omega_p5^2)^(1/2) - ...
+%     z^-1*((omega_w5^2-omega_p5^2)^(1/2)*2*exp(Ts*omega_w5)*...
+%     cosh(Ts*(omega_w5^2-omega_p5^2)^(1/2)))+z^-2*(omega_w5^2-omega_p5^2)^(1/2));
+% G_pr_r_7_z = (2*exp(Ts*omega_w7)^2*(omega_w7^2-omega_p7^2)^(1/2)*Kr7*Ts*omega_w7 - ...
+%     z^-1*2*Kr7*Ts*omega_w7*exp(Ts*omega_w7)*(omega_w7*sinh(Ts*(omega_w7^2-omega_p7^2)^(1/2))+...
+%     cosh(Ts*(omega_w7^2-omega_p7^2)^(1/2))*(omega_w7^2-omega_p7^2)^(1/2)))/...
+%     (exp(2*Ts*omega_w7)*(omega_w7^2-omega_p7^2)^(1/2) - ...
+%     z^-1*((omega_w7^2-omega_p7^2)^(1/2)*2*exp(Ts*omega_w7)*...
+%     cosh(Ts*(omega_w7^2-omega_p7^2)^(1/2)))+z^-2*(omega_w7^2-omega_p7^2)^(1/2));
+G_pr_r_5_z = -(2*Kr5*Ts*omega_w5*z*exp(Ts*omega_w5)*(omega_w5*sinh(Ts*(omega_w5^2 - omega_p5^2)^(1/2)) ...
+             + cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*(omega_w5^2 - omega_p5^2)^(1/2) ... 
+             - z*exp(Ts*omega_w5)*(omega_w5^2 - omega_p5^2)^(1/2)))/((omega_w5^2 - omega_p5^2)^(1/2) ...
+             *(exp(2*Ts*omega_w5)*z^2 - 2*exp(Ts*omega_w5)*cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*z + 1));
+G_pr_r_7_z = -(2*Kr7*Ts*omega_w7*z*exp(Ts*omega_w7)*(omega_w7*sinh(Ts*(omega_w7^2 - omega_p7^2)^(1/2)) ...
+             + cosh(Ts*(omega_w7^2 - omega_p7^2)^(1/2))*(omega_w7^2 - omega_p7^2)^(1/2) ... 
+             - z*exp(Ts*omega_w7)*(omega_w7^2 - omega_p7^2)^(1/2)))/((omega_w7^2 - omega_p7^2)^(1/2) ...
+             *(exp(2*Ts*omega_w7)*z^2 - 2*exp(Ts*omega_w7)*cosh(Ts*(omega_w7^2 - omega_p7^2)^(1/2))*z + 1));
+
+% Inner loop without control
+Gi_nc_z = c2d(Gil,Ts,'zoh');
+%Gi_nc_z = series(c2d(Gil,Ts,'zoh'),G_diff_z); % If lead-lag in series
 %Gi_nc_z = feedback(feedback(c2d(Gil,Ts,'zoh'),1,-1)*G234_cl_z,G_diff_z,1); % If lead-lag in vc feedback
 %Gi_nc_z = c2d(Gil,Ts,'zoh'); % If lead-lag is on PR controller
 figure(1)
@@ -296,10 +398,10 @@ rlocus(Gi_nc_z)
 
 % Found from root locus. Results in omega_c_i =  and
 % damping =
-Kc = 0.158;
+Kc = 2.5;
 
 % Inner loop with control, open-loop
-Gi_z = series(Kc,Gi_nc_z); % With P controller
+Gi_z = series(c2d(Gil,Ts,'zoh'),Kc+G_pr_r_5_z+G_pr_r_7_z); % With P controller
 %Gi_z = feedback(feedback(c2d(Gil,Ts,'zoh'),1,-1)*G234_cl_z,Kc*G_diff_z,1); % With lead-lag
 
 figure(2)
@@ -312,30 +414,37 @@ Gi_cl_z = feedback(Gi_z,1,-1);
 figure(3)
 margin(Gi_cl_z)
 
+% Inner loop with control, closed-loop, high output impedance
+% Used because the outer loop is least stable with high impedance.
+%Gi_max_z = series(c2d(Gil_max,Ts,'zoh'),Kc+G_pr_r_5_z+G_pr_r_7_z);
+%Gi_cl_z = feedback(Gi_max_z,1,-1);
+%hold on
+%margin(Gi_cl_z)
+
 %% Proportional Current Controller Root Locus Discrete Design
-% FOR CAPACITOR CURRENT
-omega_c_i = 0.2*fsw*2*pi;
-
-Gi_nc_z = c2d(Gic,Ts,'zoh');
-figure(1)
-rlocus(Gi_nc_z)
-
-% Found from root locus. Results in omega_c_i =  and
-% damping =
-Kc = 0.35;
-
-% Inner loop with control, open-loop
-Gi_z = series(Kc,Gi_nc_z);
-
-figure(2)
-[Gm,Pm,omega_i_gm,omega_i_pm] = margin(Gi_z);
-PM_i_z = Pm-omega_i_pm*Td*180/pi
-margin(Gi_z)
-
-% Inner loop with control, closed-loop
-Gi_cl_z = feedback(Gi_z,1,-1);
-figure(3)
-margin(Gi_cl_z)
+% % FOR CAPACITOR CURRENT
+% omega_c_i = 0.2*fsw*2*pi;
+% 
+% Gi_nc_z = c2d(Gic,Ts,'zoh');
+% figure(1)
+% rlocus(Gi_nc_z)
+% 
+% % Found from root locus. Results in omega_c_i =  and
+% % damping =
+% Kc = 0.35;
+% 
+% % Inner loop with control, open-loop
+% Gi_z = series(Kc,Gi_nc_z);
+% 
+% figure(2)
+% [Gm,Pm,omega_i_gm,omega_i_pm] = margin(Gi_z);
+% PM_i_z = Pm-omega_i_pm*Td*180/pi
+% margin(Gi_z)
+% 
+% % Inner loop with control, closed-loop
+% Gi_cl_z = feedback(Gi_z,1,-1);
+% figure(3)
+% margin(Gi_cl_z)
 
 %% Proportional-Resonant Voltage Controller Root Locus Discrete Design
 %Root locus is not viable for the outer loop
@@ -402,7 +511,7 @@ margin(Gi_cl_z)
 %% Stability test when using non-linear inductor
 
 x = 1;
-for iL = 0:5:125
+for iL = 0:5:225
     Lc_nonlin(x) = 26^2*(4*pi*10^-7*26*2*2.94e-04)/(0.1437*(1+2.27e-05*(0.0125663706*(iL*26)/(0.1437))^1.9167));
     
     % Inner loop
@@ -413,37 +522,63 @@ for iL = 0:5:125
            Rlc + Rlg + Zo];
     Gil = tf(Gil_num, Gil_den);
 
-    Gi_nc_z = series(c2d(Gil,Ts,'zoh'),G_diff_z); % If lead-lag in series
-    %Gi_nc_z = c2d(Gil,Ts,'zoh'); % If P controller
-    Gi_z = series(Kc,Gi_nc_z);
+    if abs(iL)<=218
+        k_var = abs(iL)*1/218;
+    else
+        k_var = 0;
+    end
+
+    %Gi_nc_z = series(c2d(Gil,Ts,'zoh'),G_diff_z); % If lead-lag in series
+    Gi_nc_z = c2d(Gil,Ts,'zoh'); % If P controller
+    Gi_z = series(k_var*(Kc+G_pr_r_5_z+G_pr_r_7_z),Gi_nc_z);
 
     [Gm_c(x), Pm_c(x), omega_cg_c, omega_cp_c] = margin(Gi_z);
-    Pm_c(x) = Pm_c(x) - omega_c_i*Td*180/pi;
+    Pm_c(x) = Pm_c(x) - omega_cp_c*Td*180/pi;
 
     % Outer loop
     Gi_cl_z = feedback(Gi_z,1,-1);
     Go_nc_z = Gi_cl_z*G234_cl_z;
-    Gov_ol_z = series(Go_nc_z,(Kp+G_pr_r_z+G_pr_r_3_z+G_pr_r_5_z+G_pr_r_7_z));
+    Gov_ol_z = series(Go_nc_z,(Kp+G_pr_r_z));
     [Gm_v(x), Pm_v(x), omega_cg_v, omega_cp_v] = margin(Gov_ol_z);
-    Pm_v(x) = Pm_v(x) - omega_c_o*Td*180/pi;
+    Pm_v(x) = Pm_v(x) - omega_cp_v*Td*180/pi;
 
     %fres_vec(x) = 1/(2*pi)*sqrt((Lg+Lc_nonlin(x))/(Lg*Lc_nonlin(x)*Cc));
 
-    x = x+1;
+    if mod((x-1),10) == 0
+        figure(12)
+        hold on
+        bode(Gi_z)
+        %figure(13)
+        %hold on
+        %bode(G_ov_control_z)
 
-%     if mod(x,20) == 0
-%         figure(12)
-%         hold on
-%         bode(Gic_z)
-%         figure(13)
-%         hold on
-%         bode(G_ov_control_z)
-%         figure(14)
-%         hold on
-%         bode(Gil)
-%     end
+        opt = bodeoptions;
+        opt.Grid = 'on';
+        opt.Title.String = 'Plant transfer function at various currents';
+        opt.FreqUnits = 'Hz';
+        opt.Title.FontSize = 26;
+        opt.XLabel.FontSize = 22;
+        opt.YLabel.FontSize = 22;
+        figure(14)
+        hold on
+        bodeplot(c2d(Gil,Ts,'zoh'),opt)
+        if iL == 200
+            legend({'0 A', '50 A', '100 A', '150 A', '200 A'},'location','northeast','FontSize',18)
+        end
+        Fh = gcf;                                                   % Handle To Current Figure
+        Kids = Fh.Children;                                         % Children
+        AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
+        Ax1 = AxAll(1);                                             % First Set Of Axes
+        LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
+        LinesAx1(2).LineWidth = 3;                                  % Set 4LineWidth3
+        Ax2 = AxAll(2);                                             % Second Set Of Axes
+        LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
+        LinesAx2(2).LineWidth = 3;
+    end
+
+    x = x+1;
 end
-iL = [0:5:125];
+iL = [0:5:225];
 figure(10)
 plot(iL,Pm_c,'LineWidth',4)
 set(gca, 'FontSize', 18)

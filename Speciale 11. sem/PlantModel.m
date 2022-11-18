@@ -8,19 +8,20 @@ syms Rlc Rlg Rcc Lc Lg Cc Zo
 
 %% State-space when vc = C
 syms s
-A = [-(Rlc+Rcc)/Lc -1/Lc Rcc/Lc;
-     1/Cc 0 -1/Cc;
-     Rcc/Lg 1/Lg -(Rlg+Rcc)/Lg];
+A = [-(Rlc)/Lc -1/Lc -Rcc/Lc;
+     0 0 1/Cc;
+     -Rlc/Lc -(1/Lc+1/Lg) -(Rcc/Lg + Rcc/Lc)];
 
-B = [1/Lc Rcc/Lc;
-     0 -1/Cc;
-     0 -(Rlg+Rcc)/Lg];
+B = [1/Lc 0;
+     0 0;
+     1/Lc Rlg/Lg];
 
-C = [1 0 0];
+C = [1 0 0;
+     0 1 Rcc];
 D = [0];
 
 Gs = C*inv((s*eye(3)-A))*B + D;
-Gs_iL_vi = Gs(1,1)
+Gs_iL_vi = simplify(expand(Gs(1,1)))
 
 %% Discretization of state-space using ZOH
 % WARNING: WILL FAIL
@@ -51,6 +52,12 @@ Gs_iL_vi = Gs(1,1)
 % % Go transfer function
 % Go_nc_z = Gi_cl_z*G23_z;
 %Go_nc_z_simple = simplify(expand(Go_nc_z,'ArithmeticOnly',true,'IgnoreAnalyticConstraints',true))
+syms Ts t
+
+Ad = ilaplace(inv(s-eye(length(A))-A));
+Ad_Ts = subs(Ad,t,Ts)
+
+Bd = int(Ad,0,Ts)*B
 
 %% Transfer function for vc/iL
 syms s Ts n z t
@@ -129,7 +136,7 @@ vc_simple=simplify(expand(vc))
 % Go_nc_simple_z = simplify(expand(Go_nc_z))
 
 %% Transfer function for PR controller
-syms Kp Kr omega_0 omega_w s Ts z omega_warp KT
+syms Kp Kr omega_0 omega_w s Ts z omega_warp KT n t
 G_pr_s = (2*Kr*omega_w*s)/(s^2+2*omega_w*s+omega_0^2)
 
 % s = 2/Ts*((1-z^-1)/(1+z^-1)) = 2/Ts*((z-1)/(z+1)) (Tustin)
@@ -142,6 +149,14 @@ G_pr_z = subs(G_pr_s,s,KT*((z-1)/(z+1)));
 G_pr_z_simple = simplify(expand(G_pr_z))
 
 G_pr_test = (2*KT*Kr*omega_w*(z^-1 - z^-2))/(KT^2 - 2*KT^2*z^-1 + KT^2*z^-2 + 2*omega_w*KT - 2*omega_w*KT*z^-2 + omega_0^2 + 2*omega_0^2*z^-1 + omega_0^2*z^-2);
+
+
+% Impulse invariant
+G_pr_n = ilaplace(G_pr_s);
+G_pr_nT = subs(G_pr_n,t,n*Ts);
+G_pr_z = Ts*ztrans(G_pr_nT);
+G_pr_z_simple = simplify(expand(G_pr_z))
+
 
 %% Transfer function for lead-lag network
 syms omega_max s kf KT z
@@ -161,3 +176,13 @@ syms omega_mark omega_c s z
 G_GI_s = (omega_mark^2*s)/(s^2 + omega_c*s + omega_mark^2);
 
 % s = FOH
+
+%% Transfer function for second order differential equation
+% Seriously need to use MATLAB because it's messing with me.
+syms vi Lc ddt ddt2 Rlc il ic Rcc vcap Cc io
+eq1 = Lc*ddt*il + Rlc*il + ic*Rcc + vcap
+eq1_2 = subs(eq1,ic,Cc*ddt*vcap);
+eq1_3 = subs(eq1_2,il,Cc*ddt*vcap+io)
+eq1_3_2 = vcap + Rlc*io + Rlc*Cc*ddt*vcap + Lc*ddt*io + Lc*Cc*ddt2*vcap + Cc*Rcc*ddt*vcap;
+eq1_setup=vi==eq1_3_2;
+eq1_sol = solve(eq1_setup,ddt2)

@@ -44,7 +44,7 @@ C_nl = 7.5/(f_o*R_nl_load); % [F] Non-linear load capacitor
 %R_nl_s_80p = 1e-3;
 
 R_C_nl = 1e-3; % [Ohm] ESR of non-linear load capacitor
-V_f = 0.1;%1.5; % [V] Forward voltage of rectifier diodes
+V_f = 1.0; % [V] Forward voltage of rectifier diodes
 R_d = 5e-3; % [Ohm] On-resistance of rectifier diodes
 
 % Remaining power must be dissipated in a linear load
@@ -74,9 +74,9 @@ C_r = 20*10^-6; % [F]
 L_r = (1/(2*pi*f_sw))^2/C_r; % [H] (resulting in 24 kHz resonance frequency)
 
 % Parasitics
-R_Lc = 5e-3; % [Ohm]
-R_Lg = 3e-3; % [Ohm]
-R_Cc = 1e-3; % [Ohm]
+R_Lc = 5.6e-3; % [Ohm]
+R_Lg = 5.6e-3; % [Ohm]
+R_Cc = 9e-3; % [Ohm]
 R_Cr = 0.5e-3; % [Ohm]
 R_Lr = 2e-3; % [Ohm]
 
@@ -92,55 +92,126 @@ Lc_nonlin_phi = load("nonlinear_inductor_phi.mat").phi_nonlinear;
 
 %% Controllers (see ControllerDesign.m)
 % Sampling frequency and delay
-fs = 2*f_sw; % [Hz]
+fs = 4*f_sw; % [Hz]
 Ts = 1/fs; % [s]
-Td = 1.5*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
-Tcomp = 1e-6; % [s] Estimate of computation and propagation time
+Td = 2*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
+Tcomp = Ts; % [s] Estimate of computation and propagation time
+
 
 % Proportional controller
-Kc = 0.3377;
+Kc = 2.5;
+
 
 % Lead-Lag
-s = tf('s');
-omega_max = 0.175*f_sw*2*pi; %0.2*f_sw*2*pi; % For capacitor control % 1/(sqrt((L_c+L_g)*C_c));
-phi_max = 30; % [degrees]
-kv = 0.3377; % 0.3189; % For capacitor control
+%s = tf('s');
+%omega_max = 3.35e4; %0.2*f_sw*2*pi; % For capacitor control % 1/(sqrt((L_c+L_g)*C_c));
+%phi_max = 40; % [degrees]
+%kv = 3.5;
+%
+%KT_ll = omega_max/(tan(omega_max*Ts/2));
+%kf = (1-sind(phi_max))/(1+sind(phi_max));
+%tau_a = 1/(sqrt(kf)*omega_max);
+%tau_b = kf*tau_a;
+%
+%G_ll_s = ((1+s*tau_a)/(1+s*tau_b));
+%opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
+%G_ll_z = c2d(G_ll_s,Ts,opt);
 
-KT_ll = omega_max/(tan(omega_max*Ts/2));
-kf = (1-sind(phi_max))/(1+sind(phi_max));
-tau_a = 1/(sqrt(kf)*omega_max);
-tau_b = kf*tau_a;
 
-G_ll_s = kv*((1+s*tau_a)/(1+s*tau_b));
-opt = c2dOptions('Method','tustin','PrewarpFrequency',omega_max);
-G_ll_z = c2d(G_ll_s,Ts,opt);
+% Harmonic compensation
+omega_c_i = 0.2*2*pi*f_sw;
+
+omega_p5 = f_o*2*pi*5;
+omega_w5 = 0.1*2*pi;
+Kr5 = omega_c_i/(4*5*15);
+omega_p7 = f_o*2*pi*7;
+omega_w7 = 0.1*2*pi;
+Kr7 = omega_c_i/(4*7*10);
+
+z = tf('z',Ts);
+G_pr_r_5_z = -(2*Kr5*Ts*omega_w5*z*exp(Ts*omega_w5)*(omega_w5*sinh(Ts*(omega_w5^2 - omega_p5^2)^(1/2)) ...
+             + cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*(omega_w5^2 - omega_p5^2)^(1/2) ... 
+             - z*exp(Ts*omega_w5)*(omega_w5^2 - omega_p5^2)^(1/2)))/((omega_w5^2 - omega_p5^2)^(1/2) ...
+             *(exp(2*Ts*omega_w5)*z^2 - 2*exp(Ts*omega_w5)*cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*z + 1));
+G_pr_r_7_z = -(2*Kr7*Ts*omega_w7*z*exp(Ts*omega_w7)*(omega_w7*sinh(Ts*(omega_w7^2 - omega_p7^2)^(1/2)) ...
+             + cosh(Ts*(omega_w7^2 - omega_p7^2)^(1/2))*(omega_w7^2 - omega_p7^2)^(1/2) ... 
+             - z*exp(Ts*omega_w7)*(omega_w7^2 - omega_p7^2)^(1/2)))/((omega_w7^2 - omega_p7^2)^(1/2) ...
+             *(exp(2*Ts*omega_w7)*z^2 - 2*exp(Ts*omega_w7)*cosh(Ts*(omega_w7^2 - omega_p7^2)^(1/2))*z + 1));
+num5 = abs(G_pr_r_5_z.Numerator{1,1});
+den5 = abs(G_pr_r_5_z.Denominator{1,1});
+num7 = abs(G_pr_r_7_z.Numerator{1,1});
+den7 = abs(G_pr_r_7_z.Denominator{1,1});
+
 
 % PR controller
-omega_c_o = f_o*60*2*pi; %3e4; % For inductor control %f_o*20*2*pi; % Target cross-frequency
+omega_c_o = f_o*20*2*pi; % Target cross-frequency
 omega_o = f_o*2*pi; % Fundamental frequency
-omega_p = [f_o*2*pi*1 f_o*2*pi*3 f_o*2*pi*5 f_o*2*pi*7]; % Resonant frequency
-KT = [omega_p(1)/(tan(omega_p(1)*Ts/2)) omega_p(2)/(tan(omega_p(2)*Ts/2)) ...
-      omega_p(3)/(tan(omega_p(3)*Ts/2)) omega_p(4)/(tan(omega_p(4)*Ts/2))]; % Pre-warp factor
-Kr = [omega_c_o/(4) omega_c_o/(4*3) omega_c_o/(4*5) omega_c_o/(4*7)]; % Resonant gain
-omega_w = [0.1*2*pi 0.1*2*pi 0.1*2*pi 0.1*2*pi]; % Resonance width
-Kp = 1.7674; %1.856; %For capacitor current control % Proportional PR gain
+Kp = 0.9444; % Proportional PR gain
+
+%omega_p = [f_o*2*pi*1 f_o*2*pi*3 f_o*2*pi*5 f_o*2*pi*7]; % Resonant frequency
+%KT = [omega_p(1)/(tan(omega_p(1)*Ts/2)) omega_p(2)/(tan(omega_p(2)*Ts/2)) ...
+%      omega_p(3)/(tan(omega_p(3)*Ts/2)) omega_p(4)/(tan(omega_p(4)*Ts/2))]; % Pre-warp factor
+%Kr = [omega_c_o/(4) omega_c_o/(4*3) omega_c_o/(4*5) omega_c_o/(4*7)]; % Resonant gain
+%Kr = [omega_c_o/2 omega_c_o/(4*3*20) (omega_c_o/(4*3*20)) (omega_c_o/(4*3*20))];
+%omega_w = [0.1*2*pi 0.1*2*pi 0.1*2*pi 0.1*2*pi]; % Resonance width
+
+omega_p = f_o*2*pi;
+Kr = omega_c_o/2;
+omega_w = 0.1*2*pi;
+
+G_pr_r_z = -(2*Kr*Ts*omega_w*z*exp(Ts*omega_w)*(omega_w*sinh(Ts*(omega_w^2 - omega_p^2)^(1/2)) ...
+             + cosh(Ts*(omega_w^2 - omega_p^2)^(1/2))*(omega_w^2 - omega_p^2)^(1/2) ... 
+             - z*exp(Ts*omega_w)*(omega_w^2 - omega_p^2)^(1/2)))/((omega_w^2 - omega_p^2)^(1/2) ...
+             *(exp(2*Ts*omega_w)*z^2 - 2*exp(Ts*omega_w)*cosh(Ts*(omega_w^2 - omega_p^2)^(1/2))*z + 1));
+num = abs(G_pr_r_z.Numerator{1,1});
+den = abs(G_pr_r_z.Denominator{1,1});
 
 % Maximum current (anti-windup saturation)
-iL_max = ((50000*overcurrent_factor)/(Vout*3))*sqrt(2);
-pr_sat_val = 1.5*ceil(iL_max+1);
-Klim = 1; % Anti-windup limiting gain
+io_nom = (50000/(Vout*3));
+pr_sat_val = ceil(3*io_nom);
+Klim = 5; % Anti-windup limiting gain
 
 % PI Controller [legacy]
-Kpc = 2.0678;
-Ki = 7.5398e03;
+%Kpc = 2.0678;
+%Ki = 7.5398e03;
 
 %% Differentiator
 % Generalized Integrator
+close all
 omega_mark = (2*pi*fs)/2; % Nyquist frequency for maximum flattening
 omega_c = (2*pi*fs)/3; % Selected for optimal performance
 G_diff_s = tf([omega_mark^2 0],[1 omega_c omega_mark^2]);
 G_diff_z = c2d(G_diff_s,Ts,'foh');
-%bode(G_diff_z)
+
+% opt = bodeoptions;
+% opt.Grid = 'on';
+% opt.Title.String = 'Bode plot of continuous and discrete differentiator';
+% opt.FreqUnits = 'Hz';
+% opt.Title.FontSize = 26;
+% opt.XLabel.FontSize = 22;
+% opt.YLabel.FontSize = 22;
+% bodeplot(G_diff_z, opt)
+% Fh = gcf;                                                   % Handle To Current Figure
+% Kids = Fh.Children;                                         % Children
+% AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
+% Ax1 = AxAll(1);                                             % First Set Of Axes
+% LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
+% LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
+% Ax2 = AxAll(2);                                             % Second Set Of Axes
+% LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
+% LinesAx2(2).LineWidth = 4;    
+% hold on
+% s = tf('s');
+% bodeplot(s, opt)
+% Fh = gcf;                                                   % Handle To Current Figure
+% Kids = Fh.Children;                                         % Children
+% AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
+% Ax1 = AxAll(1);                                             % First Set Of Axes
+% LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
+% LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
+% Ax2 = AxAll(2);                                             % Second Set Of Axes
+% LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
+% LinesAx2(2).LineWidth = 4;                                  % Set 4LineWidth’
 
 % Lead-lag based for resonance damping
 % s = tf('s');
@@ -158,46 +229,27 @@ G_diff_z = c2d(G_diff_s,Ts,'foh');
 % G_llr_z = c2d(G_llr_s,Ts,opt);
 
 %% Kalman filter (see KalmanFilter.m)
-% State space of plant
-states = {'io' 'vcap' 'dvcap/dt'};
-inputs = {'vi', 'dio/dt'};
-outputs = {'io' 'vcap'};
+
+% ------------------- FIRST ----------------------------
+% State space of plant for first derivative formulation
+states = {'iL' 'vcap' 'ic'};
+inputs = {'vi' 'io'};
+outputs = {'iL' 'vc'};
 
 % Matrices
-A = [0 0 0;
-     R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
-     -R_Lc/(L_c*C_c) -1/(L_c*C_c) -(R_Lc/L_c+R_Cc/L_c)];
-B = [0 1;
-     0 L_g/(C_c*R_Cc);
-     1/(L_c*C_c) -1/C_c];
+A = [-R_Lc/L_c -1/L_c -R_Cc/L_c;
+      0 0 1/C_c;
+      -C_c*R_Lc/L_c -C_c*(1/L_c + 1/L_g) -C_c*(R_Cc/L_g + R_Cc/L_c)];
+B = [1/L_c 0;
+      0 0;
+      C_c*1/L_c C_c*R_Lg/L_g];
 C = [1 0 0;
-     0 1 0]; % Output matrix for [io; vcap]
+     0 1 R_Cc];
 D = [0 0;
      0 0];
 
-% % Enhanced matrix?
-A = [0 0 0; %-R_Lg/L_g 1/L_g C_c*R_Cc/L_g;
-     R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
-     -R_Lc/(L_c) -1/(L_c) -(R_Lc/L_c+R_Cc/L_c)];
-B = [0 1; %0 0;
-     0 L_g/(C_c*R_Cc);
-     1/(L_c) -1/C_c];
-C = [1 0 C_c;
-     0 1 R_Cc*C_c]; % Output matrix for [iL; vc]
-D = [0 0;
-     0 0];
-% % Attempt at other matrix that almost works
-% A = [-R_Lc/L_c -1/L_c -(C_c*R_Cc)/L_c;
-%      -R_Lg/(R_Lg*C_c+R_Cc*C_c) -1/(R_Lg*C_c+R_Cc*C_c) 0;
-%      -R_Lc/(L_c*C_c) -1/(L_c*C_c) -R_Cc/L_c];
-% B = [1/L_c 0;
-%      0 L_g/(R_Lg*C_c+R_Cc*C_c);
-%      1/(L_c*C_c) -1/C_c];
-% C = [1 0 0;
-%      0 1 R_Cc*C_c]; % Output matrix for [iL; vc]
-% D = [0 0;
-%      0 0];
-
+% Der er ganget igennem med Cc - hvorfor virker det???
+% SERIØST!
 
 % Create discrete state space system
 lcl_sys = ss(A,B,C,D,'statename',states,'inputname',inputs,'outputname',outputs);
@@ -205,18 +257,116 @@ lcl_sys_z = c2d(lcl_sys,Ts,'zoh');
 Ad = lcl_sys_z.A;
 Bd = lcl_sys_z.B;
 
+% Observability test
 e_vals = eig(Ad)';
 obs_matrix = [C; Ad-e_vals*eye(3)];
 if rank(obs_matrix)==length(Ad)
     disp('System is observable.')
 end
 
+% % ------------------- SECOND ----------------------------
+% % State space of plant for second derivative formulation
+% states2 = {'io' 'vcap' 'dvcap/dt'};
+% inputs2 = {'vi', 'dio/dt'};
+% outputs2 = {'iL' 'vc'};
+% 
+% % Matrices
+% A2 = [0 0 0;%-R_Lg/L_g 1/L_g (C_c*R_Cc)/L_g;
+%      R_Lg/(R_Cc*C_c) -1/(C_c*R_Cc) 0;
+%      -R_Lc/(L_c) -1/(L_c) -(R_Lc/L_c+R_Cc/L_c)];
+% B2 = [0 1;%0 0;
+%      0 L_g/(C_c*R_Cc);
+%      1/(L_c) -1/C_c];
+% C2 = [1 0 C_c;
+%      0 1 R_Cc*C_c]; % Output matrix for [iL; vc]
+% D2 = [0 0;
+%      0 0];
+% 
+% % Der er ganget igennem med Cc - hvorfor virker det?
+% 
+% % Create discrete state space system
+% lcl_sys2 = ss(A2,B2,C2,D2,'statename',states2,'inputname',inputs2,'outputname',outputs2);
+% lcl_sys_z2 = c2d(lcl_sys2,Ts,'zoh');
+% Ad2 = lcl_sys_z2.A;
+% Bd2 = lcl_sys_z2.B;
+% 
+% % Observability test
+% e_vals2 = eig(Ad2)';
+% obs_matrix2 = [C2; Ad2-e_vals2*eye(3)];
+% if rank(obs_matrix2)==length(Ad2)
+%     disp('System 2 is observable.')
+% end
+
+% -----------------------------------------------------------
+% Noise calculation
+V_peak = 10;
+n_bit = 16;
+Delta_q = (V_peak-(-V_peak))/(2^n_bit);
+CT_sens = 5.333e-03; % [V/A]
+CT_offset = 5e-03; % [V]
+CT_af_gain = 2;
+CT_RMS_noise_100k = 7e-03; % [Vpp]
+CT_nom_V = CT_sens*CT_af_gain*io_nom;
+VD_nom_V = 230/400*10;
+
+% Errors in LSB
+IDL_error = 2.25;
+ADC_offset_error = 0.5e-3/Delta_q;
+Noise_floor_error = 0.8;
+Frontend_offset_error = 3.6;
+
+% Gain errors in percent
+ADC_gain_error = 0.25;
+Frontend_gain_error = 0.8;
+Transducer_gain_error = 1.15;
+Resistor_tolerance = 1/100; % [%/100]
+Divider_gain_error = abs((1-(1/40)/(((1-Resistor_tolerance)*1)/((1+Resistor_tolerance)*39+(1-Resistor_tolerance)*1)))*100);
+
+% ADC and analog front-end errors in volts
+e_quant = Delta_q;
+e_idl = IDL_error*Delta_q;
+e_offset_adc = ADC_offset_error*Delta_q;
+e_nf = Noise_floor_error*Delta_q;
+e_offset_af = Frontend_offset_error*Delta_q;
+
+e_gain_adc_c = (CT_nom_V)*ADC_gain_error/100;
+e_gain_af_c = (CT_nom_V)*Frontend_gain_error/100;
+e_gain_adc_v = (VD_nom_V)*ADC_gain_error/100;
+e_gain_af_v = (VD_nom_V)*Frontend_gain_error/100;
+e_gain_ct = (CT_nom_V)*Transducer_gain_error/100;
+e_gain_vd = (VD_nom_V)*Divider_gain_error/100;
+
+% Current Transducer specific errors
+e_ct_sens = CT_sens;
+e_ct_offset = CT_offset;
+e_ct_noise = CT_RMS_noise_100k;
+
+% Error covariances
+R_vc = ((e_quant+e_idl+e_offset_adc+e_nf+e_offset_af)^2)/12;
+R_iL = ((e_quant+e_idl+e_offset_adc+e_nf+e_offset_af+e_ct_sens+e_ct_offset+e_ct_noise)^2)/12;
+
 % Noise estimation
-G = [0; 0; 0];
-[Adg Gd] = c2d(A,G,Ts);
-%Gd = A\(expm(A*Ts)-eye(3))*G; % Also known as B1d
-%Gd = [0;0;0];
-H = [0; 0];
-Rw = 1;
-Rv = 1e-3;
-Rwv = 0;
+%G = [1; 1; 1]; % Process noise relative effect on states. DO NOT USE.
+%[Adg Gd] = c2d(A,G,Ts);
+%H = [1; 1]; % Measurement noise relative effect on outputs. DO NOT USE.
+Q = eye(1); % Also known as Rw.
+R = [R_iL 0;
+      0 R_vc]; % Also known as Rv. Two plant outputs (Noise on iL, noise on vc)
+N = [0]; % Also known as Rwv. One noise cross-covariance.
+
+% Initialization and system information
+UKF_data.Ts = Ts;
+UKF_data.x_0 = [0; 0; 0];
+UKF_data.y_0 = [0; 0];
+UKF_data.P_0 = eye(3);
+UKF_data.n = 3;
+UKF_data.kappa = 0;
+UKF_data.Q = Q;
+UKF_data.R = R;
+UKF_data.C = C;
+UKF_data.RLc = R_Lc;
+UKF_data.RCc = R_Cc;
+UKF_data.RLg = R_Lg;
+UKF_data.Cc = C_c;
+UKF_data.Lg = L_g;
+UKF_data.Lc = L_c;
