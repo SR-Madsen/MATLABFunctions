@@ -65,6 +65,7 @@ R_l_80p = Vout^2/P_lin_80p; % [Ohm] 80% linear load resistor
 
 %% Output filter (see PlantModel.m and Inductance.m)
 f_sw = 24000; % [Hz] Switching frequency
+T_sw = 1/f_sw; % [s]
 
 % Values
 L_c = 90.375*10^-6; % [H]
@@ -95,7 +96,7 @@ Lc_nonlin_phi = load("nonlinear_inductor_phi.mat").phi_nonlinear;
 fs = 4*f_sw; % [Hz]
 Ts = 1/fs; % [s]
 Td = 2*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
-Tcomp = Ts; % [s] Estimate of computation and propagation time
+Tcomp = T_sw/8; % [s] Estimate of computation and propagation time
 
 
 % Proportional controller
@@ -128,6 +129,13 @@ omega_p7 = f_o*2*pi*7;
 omega_w7 = 0.1*2*pi;
 Kr7 = omega_c_i/(4*7*10);
 
+omega_p15 = f_o*2*pi*15;
+omega_w15 = 0.1*2*pi;
+Kr15 = 40;
+omega_p21 = f_o*2*pi*21;
+omega_w21 = 0.1*2*pi;
+Kr21 = 40;
+
 z = tf('z',Ts);
 G_pr_r_5_z = -(2*Kr5*Ts*omega_w5*z*exp(Ts*omega_w5)*(omega_w5*sinh(Ts*(omega_w5^2 - omega_p5^2)^(1/2)) ...
              + cosh(Ts*(omega_w5^2 - omega_p5^2)^(1/2))*(omega_w5^2 - omega_p5^2)^(1/2) ... 
@@ -141,6 +149,19 @@ num5 = abs(G_pr_r_5_z.Numerator{1,1});
 den5 = abs(G_pr_r_5_z.Denominator{1,1});
 num7 = abs(G_pr_r_7_z.Numerator{1,1});
 den7 = abs(G_pr_r_7_z.Denominator{1,1});
+
+G_pr_r_15_z = -(2*Kr15*Ts*omega_w15*z*exp(Ts*omega_w15)*(omega_w15*sinh(Ts*(omega_w15^2 - omega_p15^2)^(1/2)) ...
+             + cosh(Ts*(omega_w15^2 - omega_p15^2)^(1/2))*(omega_w15^2 - omega_p15^2)^(1/2) ... 
+             - z*exp(Ts*omega_w15)*(omega_w15^2 - omega_p15^2)^(1/2)))/((omega_w15^2 - omega_p15^2)^(1/2) ...
+             *(exp(2*Ts*omega_w15)*z^2 - 2*exp(Ts*omega_w15)*cosh(Ts*(omega_w15^2 - omega_p15^2)^(1/2))*z + 1));
+G_pr_r_21_z = -(2*Kr21*Ts*omega_w21*z*exp(Ts*omega_w21)*(omega_w21*sinh(Ts*(omega_w21^2 - omega_p21^2)^(1/2)) ...
+             + cosh(Ts*(omega_w21^2 - omega_p21^2)^(1/2))*(omega_w21^2 - omega_p21^2)^(1/2) ... 
+             - z*exp(Ts*omega_w21)*(omega_w21^2 - omega_p21^2)^(1/2)))/((omega_w21^2 - omega_p21^2)^(1/2) ...
+             *(exp(2*Ts*omega_w21)*z^2 - 2*exp(Ts*omega_w21)*cosh(Ts*(omega_w21^2 - omega_p21^2)^(1/2))*z + 1));
+num15 = abs(G_pr_r_15_z.Numerator{1,1});
+den15 = abs(G_pr_r_15_z.Denominator{1,1});
+num21 = abs(G_pr_r_21_z.Numerator{1,1});
+den21 = abs(G_pr_r_21_z.Denominator{1,1});
 
 
 % PR controller
@@ -299,57 +320,33 @@ end
 
 % -----------------------------------------------------------
 % Noise calculation
-V_peak = 10;
+
+% ADC characteristics
+V_peak = 5;
 n_bit = 16;
 Delta_q = (V_peak-(-V_peak))/(2^n_bit);
-CT_sens = 5.333e-03; % [V/A]
+ADC_full_error = 12; % [LSB]
+
+% Current Transducer HO 150-NP characteristics
 CT_offset = 5e-03; % [V]
-CT_af_gain = 2;
-CT_RMS_noise_100k = 7e-03; % [Vpp]
-CT_nom_V = CT_sens*CT_af_gain*io_nom;
-VD_nom_V = 230/400*10;
+CT_RMS_noise = 7e-03; % [Vpp]
 
-% Errors in LSB
-IDL_error = 2.25;
-ADC_offset_error = 0.5e-3/Delta_q;
-Noise_floor_error = 0.8;
-Frontend_offset_error = 3.6;
+% Current Transducer HO 8-NSM characteristics
+CT_offset = 7e-03; % [V]
+CT_RMS_noise = 80e-03; % [Vpp]
 
-% Gain errors in percent
-ADC_gain_error = 0.25;
-Frontend_gain_error = 0.8;
-Transducer_gain_error = 1.15;
-Resistor_tolerance = 1/100; % [%/100]
-Divider_gain_error = abs((1-(1/40)/(((1-Resistor_tolerance)*1)/((1+Resistor_tolerance)*39+(1-Resistor_tolerance)*1)))*100);
-
-% ADC and analog front-end errors in volts
+% Errors in volts
 e_quant = Delta_q;
-e_idl = IDL_error*Delta_q;
-e_offset_adc = ADC_offset_error*Delta_q;
-e_nf = Noise_floor_error*Delta_q;
-e_offset_af = Frontend_offset_error*Delta_q;
-
-e_gain_adc_c = (CT_nom_V)*ADC_gain_error/100;
-e_gain_af_c = (CT_nom_V)*Frontend_gain_error/100;
-e_gain_adc_v = (VD_nom_V)*ADC_gain_error/100;
-e_gain_af_v = (VD_nom_V)*Frontend_gain_error/100;
-e_gain_ct = (CT_nom_V)*Transducer_gain_error/100;
-e_gain_vd = (VD_nom_V)*Divider_gain_error/100;
-
-% Current Transducer specific errors
-e_ct_sens = CT_sens;
+e_full = ADC_full_error*Delta_q;
 e_ct_offset = CT_offset;
-e_ct_noise = CT_RMS_noise_100k;
+e_ct_noise = CT_RMS_noise;
 
 % Error covariances
-R_vc = ((e_quant+e_idl+e_offset_adc+e_nf+e_offset_af)^2)/12;
-R_iL = ((e_quant+e_idl+e_offset_adc+e_nf+e_offset_af+e_ct_sens+e_ct_offset+e_ct_noise)^2)/12;
+R_vc = ((e_quant+e_full)^2)/12;
+R_iL = ((e_quant+e_full+e_ct_offset+e_ct_noise)^2)/12;
 
 % Noise estimation
-%G = [1; 1; 1]; % Process noise relative effect on states. DO NOT USE.
-%[Adg Gd] = c2d(A,G,Ts);
-%H = [1; 1]; % Measurement noise relative effect on outputs. DO NOT USE.
-Q = eye(1); % Also known as Rw.
+Q = eye(3); % Also known as Rw.
 R = [R_iL 0;
       0 R_vc]; % Also known as Rv. Two plant outputs (Noise on iL, noise on vc)
 N = [0]; % Also known as Rwv. One noise cross-covariance.
