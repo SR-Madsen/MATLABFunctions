@@ -97,7 +97,7 @@ fs = 4*f_sw; % [Hz]
 fs = 96006.141; % [Hz] For Imperix simulation
 Ts = 1/fs; % [s]
 Td = 2*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
-Tcomp = T_sw/8; % [s] Estimate of computation and propagation time
+Tcomp = Ts/4; % [s] Estimate of computation and propagation time
 
 
 % Proportional controller
