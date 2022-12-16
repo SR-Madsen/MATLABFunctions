@@ -1,4 +1,4 @@
-clear, close all, clc;
+%clear, close all, clc;
 
 %% Inverter
 VDC = 800; % [V]
@@ -94,7 +94,7 @@ Lc_nonlin_phi = load("nonlinear_inductor_phi.mat").phi_nonlinear;
 %% Controllers (see ControllerDesign.m)
 % Sampling frequency and delay
 fs = 4*f_sw; % [Hz]
-fs = 96006.141; % [Hz] For Imperix simulation
+%fs = 96006.141; % [Hz] For Imperix simulation
 Ts = 1/fs; % [s]
 Td = 2*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
 Tcomp = Ts/4; % [s] Estimate of computation and propagation time
