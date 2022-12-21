@@ -8,9 +8,9 @@
 // Code generated for Simulink model 'TTypeInverter_Imperix'.
 // To be implemented on the B-Box RCP or the B-Board PRO.
 //
-// Model version                  : 14.80
+// Model version                  : 14.119
 // Simulink Coder version         : 9.8 (R2022b) 13-May-2022
-// C/C++ source code generated on : Thu Dec 15 11:55:42 2022
+// C/C++ source code generated on : Wed Dec 21 14:14:34 2022
 //
 #ifndef RTW_HEADER_TTypeInverter_Imperix_types_h_
 #define RTW_HEADER_TTypeInverter_Imperix_types_h_
@@ -57,6 +57,12 @@ struct dsp_simulink_MovingAverage_TT_T
 };
 
 #endif                                // struct_dsp_simulink_MovingAverage_TT_T
+
+// Parameters for system: '<S97>/MeasurementUpdate'
+typedef struct P_MeasurementUpdate_TTypeInve_T_ P_MeasurementUpdate_TTypeInve_T;
+
+// Parameters for system: '<S103>/Enabled Subsystem'
+typedef struct P_EnabledSubsystem_TTypeInver_T_ P_EnabledSubsystem_TTypeInver_T;
 
 // Parameters (default storage)
 typedef struct P_TTypeInverter_Imperix_T_ P_TTypeInverter_Imperix_T;

@@ -8,9 +8,9 @@
 // Code generated for Simulink model 'TTypeInverter_Imperix'.
 // To be implemented on the B-Box RCP or the B-Board PRO.
 //
-// Model version                  : 14.80
+// Model version                  : 14.119
 // Simulink Coder version         : 9.8 (R2022b) 13-May-2022
-// C/C++ source code generated on : Thu Dec 15 11:55:42 2022
+// C/C++ source code generated on : Wed Dec 21 14:14:34 2022
 //
 #ifndef RTW_HEADER_rtmodel_h_
 #define RTW_HEADER_rtmodel_h_

@@ -17,7 +17,7 @@ R_ond = 5e-3; % Integral diode on-resistance [Ohm]
 
 %% Reference non-linear load values PER PHASE
 Vout = 230; % [V] Rated RMS output voltage
-Vout_amp = 230*sqrt(2); % [V] Maximum output voltage amplitude, for sine gen
+Vout_amp = Vout*sqrt(2); % [V] Maximum output voltage amplitude, for sine gen
 f_o = 50; % [Hz] Output frequency
 Uc = 1.22*Vout; % [V] Rectified voltage
 
@@ -26,42 +26,32 @@ R_nl_s = 0.04*Vout^2/S_tot; % [Ohm] Series line resistor
 R_nl_load = Uc^2/(0.66*S_tot); % [Ohm] Non-linear load resistor
 C_nl = 7.5/(f_o*R_nl_load); % [F] Non-linear load capacitor
 
-%S_20p = 0.2*S_tot; % [VA] Apparent power across 20% load
-%S_80p = 0.8*S_tot; % [VA] Apparent power across 80% load
-%
-% 20% load
-%R_nl_s_20p = 0.04*Vout^2/S_20p; % [Ohm] Series line resistor
-%R_nl_load_20p = Uc^2/(0.66*S_20p); % [Ohm] Non-linear load resistor
-%C_nl_20p = 7.5/(f_o*R_nl_load_20p); % [F] Non-linear load capacitor
-%
-% 80% load
-%R_nl_s_80p = 0.04*Vout^2/S_80p;
-%R_nl_load_80p = Uc^2/(0.66*S_80p);
-%C_nl_80p = 7.5/(f_o*R_nl_load_80p);
-%
-% NOTICE: SERIES RESISTORS HAVE BEEN OVERRIDDEN FOR NOW DUE TO RINGING
-%R_nl_s_20p = 1e-3;
-%R_nl_s_80p = 1e-3;
-
 R_C_nl = 1e-3; % [Ohm] ESR of non-linear load capacitor
 V_f = 1.0; % [V] Forward voltage of rectifier diodes
 R_d = 5e-3; % [Ohm] On-resistance of rectifier diodes
 
 % Remaining power must be dissipated in a linear load
 overcurrent_factor = 1.5; % 1.5 for peak
-P_tot = (50000*overcurrent_factor)/3; % [W]
-P_lin = P_tot - S_tot; % [W] Total power across linear load
+P_tot_1p = (50000*overcurrent_factor)/3; % [W]
+P_lin = P_tot_1p - S_tot; % [W] Total power across linear load
 R_l_nl = Vout^2/P_lin; % [Ohm] Linear load resistor
 
 %% Linear load values PER PHASE when non-linear load is disconnected
 % That is, reference test load
-P_lin = P_tot; % [W] For when only using linear load
+P_lin = P_tot_1p; % [W] For when only using linear load
 
 P_lin_20p = 0.2*P_lin; % [W] Power across 20% load
 P_lin_80p = 0.8*P_lin; % [W] Power across 80% load
 
 R_l_20p = Vout^2/P_lin_20p; % [Ohm] 20% linear load resistor
 R_l_80p = Vout^2/P_lin_80p; % [Ohm] 80% linear load resistor
+
+%% Three-phase linear load value
+P_tot_3p = 50000; % [W]
+P_max_3p = P_tot_3p*overcurrent_factor;
+
+V_out_3p = Vout*sqrt(2);
+R_l_3p = V_out_3p^2/P_max_3p; % [Ohm]
 
 %% Output filter (see PlantModel.m and Inductance.m)
 f_sw = 24000; % [Hz] Switching frequency
@@ -93,8 +83,8 @@ Lc_nonlin_phi = load("nonlinear_inductor_phi.mat").phi_nonlinear;
 
 %% Controllers (see ControllerDesign.m)
 % Sampling frequency and delay
-fs = 4*f_sw; % [Hz]
-%fs = 96006.141; % [Hz] For Imperix simulation
+%fs = 4*f_sw; % [Hz]
+fs = 96006.141; % [Hz] For Imperix simulation
 Ts = 1/fs; % [s]
 Td = 2*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
 Tcomp = Ts/4; % [s] Estimate of computation and propagation time
