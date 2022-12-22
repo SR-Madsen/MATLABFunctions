@@ -1,7 +1,7 @@
 clear, close all, clc;
 
 %% Calculate RMS of steady-state wave
-SSdata = load('steady_state_wave.mat');
+SSdata = load('~/Desktop/steady_state_wave.mat');
 time = SSdata.time;
 SSamplitude = SSdata.signals(1).values(:);
 
@@ -15,7 +15,7 @@ rms_ss = load('steady_state_rms.mat').rms_ss;
 %plot(time(1:(length(time)-n_halfcycle)),rms_ss)
 
 %% Calculate RMS of 100% step
-SLdata = load('step_load_wave.mat');
+SLdata = load('~/Desktop/step_load_wave.mat');
 SLamplitude = SLdata.signals(1).values(:);
 
 %for i = 1:(length(time)-n_halfcycle)
@@ -27,7 +27,7 @@ rms_sl = load('step_load_rms.mat').rms_sl;
 
 
 %% Calculate RMS of 80% step removal
-SRdata = load('step_remove_wave.mat');
+SRdata = load('~/Desktop/step_remove_wave.mat');
 SRamplitude = SRdata.signals(1).values(:);
 
 %for i = 1:(length(time)-n_halfcycle)
@@ -78,9 +78,21 @@ grid on
 plot(time, SSamplitude, 'Color', [0.5 0.5 0.5], 'LineWidth', 4)
 hold on
 plot(time, SLamplitude, "r", 'LineWidth', 4) % Load step
+set(gca,'FontSize',18)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Output Voltage [V]', 'FontSize', 22)
+title('Output voltage during 100% load step')
+xlim([4.9e-3 6e-3])
+ylim([200 370])
 
 figure(6)
 grid on
 plot(time, SSamplitude, 'Color', [0.5 0.5 0.5], 'LineWidth', 4)
 hold on
 plot(time, SRamplitude, "r", 'LineWidth', 4) % Remove step
+set(gca,'FontSize',18)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Output Voltage [V]', 'FontSize', 22)
+title('Output voltage during 80% load removal')
+xlim([4.9e-3 5.8e-3])
+ylim([240 450])

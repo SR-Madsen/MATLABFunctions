@@ -36,6 +36,18 @@ P_tot_1p = (50000*overcurrent_factor)/3; % [W]
 P_lin = P_tot_1p - S_tot; % [W] Total power across linear load
 R_l_nl = Vout^2/P_lin; % [Ohm] Linear load resistor
 
+%% Test of non-linear load values for three phases
+Vout_3p = 230*sqrt(3);
+Uc_3p = 1.22*Vout;
+
+S_tot_3p = 24000;
+R_nl_s_3p = 0.04*Vout_3p^2/S_tot_3p;
+R_nl_load_3p = Uc_3p^2/(0.66*S_tot_3p);
+C_nl_3p = 7.5/(f_o*R_nl_load_3p);
+
+P_lin_3p = (50000*overcurrent_factor)-S_tot_3p;
+R_l_nl_3p = Vout_3p^2/P_lin_3p;
+
 %% Linear load values PER PHASE when non-linear load is disconnected
 % That is, reference test load
 P_lin = P_tot_1p; % [W] For when only using linear load
@@ -50,8 +62,7 @@ R_l_80p = Vout^2/P_lin_80p; % [Ohm] 80% linear load resistor
 P_tot_3p = 50000; % [W]
 P_max_3p = P_tot_3p*overcurrent_factor;
 
-V_out_3p = Vout*sqrt(2);
-R_l_3p = V_out_3p^2/P_max_3p; % [Ohm]
+R_l_3p = Vout/(P_max_3p/(Vout*3)) % [Ohm]
 
 %% Output filter (see PlantModel.m and Inductance.m)
 f_sw = 24000; % [Hz] Switching frequency
@@ -344,8 +355,12 @@ N = [0]; % Also known as Rwv. One noise cross-covariance.
 
 % Initialization and system information
 UKF_data.Ts = Ts;
-UKF_data.x_0 = [0; 0; 0];
-UKF_data.y_0 = [0; 0];
+UKF_data.x_0_l1 = [0; 0; 0];
+UKF_data.x_0_l2 = [0; 280; 0];
+UKF_data.x_0_l3 = [0; -280; 0];
+UKF_data.y_0_l1 = [0; 0];
+UKF_data.y_0_l2 = [0; 280];
+UKF_data.y_0_l3 = [0; -280];
 UKF_data.P_0 = eye(3);
 UKF_data.n = 3;
 UKF_data.kappa = 0;
