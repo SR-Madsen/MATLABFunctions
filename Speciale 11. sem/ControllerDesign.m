@@ -394,7 +394,7 @@ Gi_nc_z = c2d(Gil,Ts,'zoh');
 %Gi_nc_z = feedback(feedback(c2d(Gil,Ts,'zoh'),1,-1)*G234_cl_z,G_diff_z,1); % If lead-lag in vc feedback
 %Gi_nc_z = c2d(Gil,Ts,'zoh'); % If lead-lag is on PR controller
 figure(1)
-rlocus(Gi_nc_z)
+rlocus(Gi_nc_z) 
 
 % Found from root locus. Results in omega_c_i =  and
 % damping =

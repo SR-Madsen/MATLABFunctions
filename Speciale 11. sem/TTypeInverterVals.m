@@ -1,4 +1,4 @@
-%clear, close all, clc;
+clear, close all, clc;
 
 %% Inverter
 VDC = 800; % [V]
@@ -62,7 +62,7 @@ R_l_80p = Vout^2/P_lin_80p; % [Ohm] 80% linear load resistor
 P_tot_3p = 50000; % [W]
 P_max_3p = P_tot_3p*overcurrent_factor;
 
-R_l_3p = Vout/(P_max_3p/(Vout*3)) % [Ohm]
+R_l_3p = Vout/(P_max_3p/(Vout*3)); % [Ohm]
 
 %% Output filter (see PlantModel.m and Inductance.m)
 f_sw = 24000; % [Hz] Switching frequency
@@ -330,22 +330,22 @@ Delta_q = (V_peak-(-V_peak))/(2^n_bit);
 ADC_full_error = 12; % [LSB]
 
 % Current Transducer HO 150-NP characteristics
-CT_offset = 5e-03; % [V]
+%CT_offset = 5e-03; % [V]
 CT_RMS_noise = 7e-03; % [Vpp]
 
 % Current Transducer HO 8-NSM characteristics
-CT_offset = 7e-03; % [V]
-CT_RMS_noise = 80e-03; % [Vpp]
+%CT_offset = 7e-03; % [V]
+%CT_RMS_noise = 80e-03; % [Vpp]
 
 % Errors in volts
 e_quant = Delta_q;
 e_full = ADC_full_error*Delta_q;
-e_ct_offset = CT_offset;
+%e_ct_offset = CT_offset;
 e_ct_noise = CT_RMS_noise;
 
 % Error covariances
 R_vc = ((e_quant+e_full)^2)/12;
-R_iL = ((e_quant+e_full+e_ct_offset+e_ct_noise)^2)/12;
+R_iL = ((e_quant+e_full+e_ct_noise)^2)/12;
 
 % Noise estimation
 Q = eye(3); % Also known as Rw.
@@ -356,11 +356,11 @@ N = [0]; % Also known as Rwv. One noise cross-covariance.
 % Initialization and system information
 UKF_data.Ts = Ts;
 UKF_data.x_0_l1 = [0; 0; 0];
-UKF_data.x_0_l2 = [0; 280; 0];
-UKF_data.x_0_l3 = [0; -280; 0];
+UKF_data.x_0_l2 = [0; 0; 0];
+UKF_data.x_0_l3 = [0; 0; 0];
 UKF_data.y_0_l1 = [0; 0];
-UKF_data.y_0_l2 = [0; 280];
-UKF_data.y_0_l3 = [0; -280];
+UKF_data.y_0_l2 = [0; 0];
+UKF_data.y_0_l3 = [0; 0];
 UKF_data.P_0 = eye(3);
 UKF_data.n = 3;
 UKF_data.kappa = 0;

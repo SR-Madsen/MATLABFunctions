@@ -43,16 +43,16 @@ e_rms_sl = rms_sl-rms_ss;
 p_e_rms_sl = e_rms_sl./rms_ss.*100;
 
 figure(1)
-semilogx(time(1:(length(time)-n_halfcycle)),p_e_rms_sl)
-xlim([5e-3 1])
+plot(time(1:(length(time)-n_halfcycle))-5.1e-3,p_e_rms_sl)
+xlim([0 1-5.1e-3])
 ylim([-0.4 0.4])
 
 e_rms_sr = rms_sr-rms_ss;
 p_e_rms_sr = e_rms_sr./rms_ss.*100;
 
 figure(2)
-semilogx(time(1:(length(time)-n_halfcycle)),p_e_rms_sr)
-xlim([5e-3 1])
+plot(time(1:(length(time)-n_halfcycle))-5.1e-3,p_e_rms_sr)
+xlim([0 1-5.1e-3])
 ylim([-0.6 0.4])
 
 %% Calculate instant deviation
@@ -60,17 +60,44 @@ e_inst_sl = SLamplitude-SSamplitude;
 p_e_inst_sl = e_inst_sl./SSamplitude.*100;
 
 figure(3)
-semilogx(time,p_e_inst_sl)
-xlim([5e-3 9e-3])
+plot(time-5.1e-3,p_e_inst_sl)
+xlim([0 9e-3-5.1e-3])
 ylim([-40 20])
 
 e_inst_sr = SRamplitude-SSamplitude;
 p_e_inst_sr = e_inst_sr./SSamplitude.*100;
 
 figure(4)
-semilogx(time,p_e_inst_sr)
-xlim([5e-3 9e-3])
+plot(time-5.1e-3,p_e_inst_sr)
+xlim([0 9e-3-5.1e-3])
 ylim([-30 40])
+
+%% RMS and instant deviation
+figure(7)
+hold on
+plot(time(n_halfcycle/2+n_halfcycle/100:n_halfcycle-n_halfcycle/10)-5e-3,p_e_inst_sl(n_halfcycle/2+n_halfcycle/100:n_halfcycle-n_halfcycle/10), 'LineWidth', 4)
+plot(time(1:(length(time)-n_halfcycle))-5e-3,p_e_rms_sl, 'LineWidth', 4)
+xlim([0.1e-3 9e-3-5e-3])
+ylim([-40 20])
+grid on
+set(gca,'FontSize',18)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Voltage Deviation [%]', 'FontSize', 22)
+title('Output voltage deviation from 0.1 ms after load step')
+legend('Instant Deviation', 'RMS Deviation')
+
+figure(8)
+hold on
+plot(time(n_halfcycle/2+n_halfcycle/100:n_halfcycle-n_halfcycle/10)-5e-3,p_e_inst_sr(n_halfcycle/2+n_halfcycle/100:n_halfcycle-n_halfcycle/10), 'LineWidth', 4)
+plot(time(1:(length(time)-n_halfcycle))-5e-3,p_e_rms_sr, 'LineWidth', 4)
+xlim([0.1e-3 9e-3-5e-3])
+ylim([-30 40])
+grid on
+set(gca,'FontSize',18)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Voltage Deviation [%]', 'FontSize', 22)
+title('Output voltage deviation from 0.1 ms after load removal')
+legend('Instant Deviation', 'RMS Deviation')
 
 %% Plots on top of each other
 figure(5)
@@ -82,6 +109,7 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Output Voltage [V]', 'FontSize', 22)
 title('Output voltage during 100% load step')
+legend('Steady-State No Load', 'Load Step')
 xlim([4.9e-3 6e-3])
 ylim([200 370])
 
@@ -94,5 +122,6 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Output Voltage [V]', 'FontSize', 22)
 title('Output voltage during 80% load removal')
+legend('Steady-State No Load', 'Load Removal')
 xlim([4.9e-3 5.8e-3])
 ylim([240 450])
