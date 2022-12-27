@@ -222,7 +222,7 @@ G_diff_z = c2d(G_diff_s,Ts,'foh');
 % LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
 % Ax2 = AxAll(2);                                             % Second Set Of Axes
 % LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
-% LinesAx2(2).LineWidth = 4;    
+% LinesAx2(2).LineWidth = 4;
 % hold on
 % s = tf('s');
 % bodeplot(s, opt)
