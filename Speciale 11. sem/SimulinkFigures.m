@@ -12,6 +12,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage under No Load')
+ax = gca;
+ax.GridAlpha = 0.8;
 subplot(2,1,2)
 plot(time,ss_nl.signals(2).values(:),'LineWidth',4)
 grid on
@@ -19,6 +21,8 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Current [A]', 'FontSize', 22)
 title('Output Current under No Load')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 %% Steady-State Full Load
 ss_fl = load('steady_state_full_load.mat');
@@ -32,6 +36,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage under Full Load')
+ax = gca;
+ax.GridAlpha = 0.8;
 subplot(2,1,2)
 plot(time,ss_fl.signals(2).values(:),'LineWidth',4)
 grid on
@@ -39,6 +45,8 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Current [A]', 'FontSize', 22)
 title('Output Current under Full Load')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 
 %% Steady-State Nonlinear Load
@@ -53,6 +61,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage under Nonlinear Load')
+ax = gca;
+ax.GridAlpha = 0.8;
 subplot(2,1,2)
 plot(time,ss_nll.signals(2).values(:),'LineWidth',4)
 grid on
@@ -60,6 +70,8 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Current [A]', 'FontSize', 22)
 title('Output Current under Nonlinear Load')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 
 %% Overcurrent Fault
@@ -74,6 +86,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage under Short-Circuit')
+ax = gca;
+ax.GridAlpha = 0.8;
 subplot(2,1,2)
 plot(time,ss_oc.signals(2).values(:),'LineWidth',4)
 ylim([-300 300])
@@ -82,6 +96,8 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Current [A]', 'FontSize', 22)
 title('Output Current under Short-Circuit')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 
 %% Capacitor Charge
@@ -96,6 +112,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage under Capacitor Charge')
+ax = gca;
+ax.GridAlpha = 0.8;
 subplot(2,1,2)
 plot(time,ss_cc.signals(2).values(:),'LineWidth',4)
 ylim([-250 250])
@@ -104,6 +122,8 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Current [A]', 'FontSize', 22)
 title('Output Current under Capacitor Charge')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 %% Kalman Estimates
 
@@ -120,6 +140,8 @@ set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Actual versus estimated capacitor voltage')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 ss_vc_err = load('vc_esterror.mat');
 time = ss_vc_err.time;
@@ -132,6 +154,8 @@ set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Capacitor voltage estimation error')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 % Inductor current
 ss_iL = load('iL_estimate.mat');
@@ -146,6 +170,8 @@ set(gca,'FontSize',18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Actual versus estimated converter-side inductor current')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 ss_iL_err = load('iL_esterror.mat');
 time = ss_iL_err.time;
@@ -158,6 +184,8 @@ set(gca,'FontSize',18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Converter-side inductor current estimation error')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 % Output current
 ss_io = load('io_estimate.mat');
@@ -172,6 +200,8 @@ set(gca,'FontSize',18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Actual versus estimated output current')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 % SKF vs UKF
 ss_skfvsukf = load('SKF_vs_UKF.mat');
@@ -187,6 +217,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Current [A]', 'FontSize', 22)
 title('Converter-side inductor current estimates')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 subplot(2,1,2)
 plot(time,ss_skfvsukf.signals(2).values(:,1),time,ss_skfvsukf.signals(2).values(:,2),'LineWidth',4)
@@ -198,6 +230,8 @@ set(gca,'FontSize', 18)
 ylabel('Voltage [V]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Capacitor voltage estimates')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 %% Three-Phase
 ss_3p_nl = load('three_phase_full_load.mat');
@@ -211,6 +245,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 subplot(2,1,2)
 plot(time,ss_3p_nl.signals(2).values(:,1),time,ss_3p_nl.signals(2).values(:,2),time,ss_3p_nl.signals(2).values(:,3),'LineWidth',4)
@@ -221,6 +257,8 @@ set(gca,'FontSize', 18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Output Current')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 ss_3p_steps = load('three_phase_steps.mat');
 time = ss_3p_steps.time;
@@ -233,6 +271,8 @@ grid on
 set(gca,'FontSize',18)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output Voltage')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 subplot(2,1,2)
 plot(time,ss_3p_steps.signals(2).values(:,1),time,ss_3p_steps.signals(2).values(:,2),time,ss_3p_steps.signals(2).values(:,3),'LineWidth',4)
@@ -243,6 +283,8 @@ set(gca,'FontSize', 18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Output Current')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 
 %% Notch filter
@@ -259,6 +301,8 @@ set(gca,'FontSize',18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Notch filter current during load step simulation')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 % No notch output voltage
 ss_nonotch = load('no_notch_output.mat');
@@ -273,3 +317,5 @@ set(gca,'FontSize',18)
 xlabel('Time [s]', 'FontSize', 22)
 ylabel('Voltage [V]', 'FontSize', 22)
 title('Output voltage without notch filter during load step')
+ax = gca;
+ax.GridAlpha = 0.8;

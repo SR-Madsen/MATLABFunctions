@@ -76,9 +76,11 @@ figure(2)
 plot(I_linear, phi_linear, I_nonlinear, phi_nonlinear, 'LineWidth', 4)
 set(gca, 'FontSize', 18)
 grid('on');
-title('Magnetic flux versus current for converter-side inductor');
-xlabel('Current, I (A)');
-ylabel('Magnetic flux, \phi (Wb)');
+ax = gca;
+ax.GridAlpha = 0.8;
+title('Magnetic flux versus current for converter-side inductor','FontSize', 26);
+xlabel('Current, I (A)','FontSize',22);
+ylabel('Magnetic flux, \phi (Wb)','FontSize',22);
 legend('Linear', 'Nonlinear', 'Location', 'NorthWest');
 
 %% Non-linear inductance curve

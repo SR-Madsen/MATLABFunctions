@@ -206,37 +206,41 @@ omega_c = (2*pi*fs)/3; % Selected for optimal performance
 G_diff_s = tf([omega_mark^2 0],[1 omega_c omega_mark^2]);
 G_diff_z = c2d(G_diff_s,Ts,'foh');
 
-% opt = bodeoptions;
-% opt.Grid = 'on';
-% opt.Title.String = 'Bode plot of continuous and discrete differentiator';
-% opt.FreqUnits = 'Hz';
-% opt.Title.FontSize = 26;
-% opt.XLabel.FontSize = 22;
-% opt.YLabel.FontSize = 22;
-% opt.TickLabel.FontSize = 18;
-% bodeplot(G_diff_z, opt)
-% Fh = gcf;                                                   % Handle To Current Figure
-% Kids = Fh.Children;                                         % Children
-% AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
-% Ax1 = AxAll(1);                                             % First Set Of Axes
-% LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
-% LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
-% Ax2 = AxAll(2);                                             % Second Set Of Axes
-% LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
-% LinesAx2(2).LineWidth = 4;
-% hold on
-% s = tf('s');
-% bodeplot(s, opt)
-% legend('Discrete', 'Continuous')
-% Fh = gcf;                                                   % Handle To Current Figure
-% Kids = Fh.Children;                                         % Children
-% AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
-% Ax1 = AxAll(1);                                             % First Set Of Axes
-% LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
-% LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
-% Ax2 = AxAll(2);                                             % Second Set Of Axes
-% LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
-% LinesAx2(2).LineWidth = 4;                                  % Set 4LineWidth’
+opt = bodeoptions;
+opt.Grid = 'on';
+opt.Title.String = 'Bode plot of continuous and discrete differentiator';
+opt.FreqUnits = 'Hz';
+opt.Title.FontSize = 26;
+opt.XLabel.FontSize = 22;
+opt.YLabel.FontSize = 22;
+opt.TickLabel.FontSize = 18;
+bodeplot(G_diff_z, opt)
+Fh = gcf;                                                   % Handle To Current Figure
+Kids = Fh.Children;                                         % Children
+AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
+Ax1 = AxAll(1);                                             % First Set Of Axes
+LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
+LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
+Ax2 = AxAll(2);                                             % Second Set Of Axes
+LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
+LinesAx2(2).LineWidth = 4;
+hold on
+s = tf('s');
+bodeplot(s, opt)
+legend('Discrete', 'Continuous')
+Fh = gcf;                                                   % Handle To Current Figure
+Kids = Fh.Children;                                         % Children
+AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes
+Ax1 = AxAll(1);                                             % First Set Of Axes
+LinesAx1 = findobj(Ax1,'Type','Line');                      % Handle To Lines
+LinesAx1(2).LineWidth = 4;                                  % Set 4LineWidth’
+Ax2 = AxAll(2);                                             % Second Set Of Axes
+LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
+LinesAx2(2).LineWidth = 4;                                  % Set 4LineWidth’
+Ax1.GridAlpha = 0.8;
+Ax1.MinorGridAlpha = 0.8;
+Ax2.GridAlpha = 0.8;
+Ax2.MinorGridAlpha = 0.8;
 
 % Lead-lag based for resonance damping
 % s = tf('s');

@@ -85,6 +85,8 @@ xlabel('Time [s]', 'FontSize', 22)
 ylabel('Voltage Deviation [%]', 'FontSize', 22)
 title('Output voltage deviation from 0.1 ms after load step')
 legend('Instant Deviation', 'RMS Deviation')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 figure(8)
 hold on
@@ -98,6 +100,8 @@ xlabel('Time [s]', 'FontSize', 22)
 ylabel('Voltage Deviation [%]', 'FontSize', 22)
 title('Output voltage deviation from 0.1 ms after load removal')
 legend('Instant Deviation', 'RMS Deviation')
+ax = gca;
+ax.GridAlpha = 0.8;
 
 %% Plots on top of each other
 figure(5)
@@ -112,6 +116,8 @@ title('Output voltage during 100% load step')
 legend('Steady-State No Load', 'Load Step')
 xlim([4.9e-3 6e-3])
 ylim([200 370])
+ax = gca;
+ax.GridAlpha = 0.8;
 
 figure(6)
 grid on
@@ -125,3 +131,5 @@ title('Output voltage during 80% load removal')
 legend('Steady-State No Load', 'Load Removal')
 xlim([4.9e-3 5.8e-3])
 ylim([240 450])
+ax = gca;
+ax.GridAlpha = 0.8;

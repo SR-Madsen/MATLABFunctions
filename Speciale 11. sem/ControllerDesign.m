@@ -579,6 +579,10 @@ for iL = 0:5:225
         Ax2 = AxAll(2);                                             % Second Set Of Axes
         LinesAx2 = findobj(Ax2,'Type','Line');                      % Handle To Lines
         LinesAx2(2).LineWidth = 3;
+        Ax1.GridAlpha = 0.8;
+        Ax1.MinorGridAlpha = 0.8;
+        Ax2.GridAlpha = 0.8;
+        Ax2.MinorGridAlpha = 0.8;
     end
 
     x = x+1;
