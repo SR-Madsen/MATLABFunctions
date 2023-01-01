@@ -94,8 +94,8 @@ Lc_nonlin_phi = load("nonlinear_inductor_phi.mat").phi_nonlinear;
 
 %% Controllers (see ControllerDesign.m)
 % Sampling frequency and delay
-%fs = 4*f_sw; % [Hz]
-fs = 96006.141; % [Hz] For Imperix simulation
+fs = 4*f_sw; % [Hz]
+%fs = 96006.141; % [Hz] For Imperix simulation
 Ts = 1/fs; % [s]
 Td = 2*Ts; % [s] Unused in simulation as ZOH and SimScape inductor account for it
 Tcomp = Ts/4; % [s] Estimate of computation and propagation time
@@ -213,6 +213,7 @@ G_diff_z = c2d(G_diff_s,Ts,'foh');
 % opt.Title.FontSize = 26;
 % opt.XLabel.FontSize = 22;
 % opt.YLabel.FontSize = 22;
+% opt.TickLabel.FontSize = 18;
 % bodeplot(G_diff_z, opt)
 % Fh = gcf;                                                   % Handle To Current Figure
 % Kids = Fh.Children;                                         % Children
@@ -226,6 +227,7 @@ G_diff_z = c2d(G_diff_s,Ts,'foh');
 % hold on
 % s = tf('s');
 % bodeplot(s, opt)
+% legend('Discrete', 'Continuous')
 % Fh = gcf;                                                   % Handle To Current Figure
 % Kids = Fh.Children;                                         % Children
 % AxAll = findobj(Kids,'Type','Axes');                        % Handles To Axes

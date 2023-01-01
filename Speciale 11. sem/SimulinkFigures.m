@@ -199,7 +199,7 @@ ylabel('Voltage [V]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Capacitor voltage estimates')
 
-% Three-Phase
+%% Three-Phase
 ss_3p_nl = load('three_phase_full_load.mat');
 time = ss_3p_nl.time;
 figure(12)
@@ -243,3 +243,33 @@ set(gca,'FontSize', 18)
 ylabel('Current [A]', 'FontSize', 22)
 xlabel('Time [s]', 'FontSize', 22)
 title('Output Current')
+
+
+%% Notch filter
+% Notch filter current
+ss_ir = load('notch_filter_current.mat');
+time = ss_ir.time;
+
+figure(14)
+plot(time,ss_ir.signals(1).values(:),'LineWidth',4)
+xlim([0.022 0.05])
+ylim([-110 110])
+grid on
+set(gca,'FontSize',18)
+ylabel('Current [A]', 'FontSize', 22)
+xlabel('Time [s]', 'FontSize', 22)
+title('Notch filter current during load step simulation')
+
+% No notch output voltage
+ss_nonotch = load('no_notch_output.mat');
+time = ss_nonotch.time;
+
+figure(15)
+plot(time,ss_nonotch.signals(1).values(:),'LineWidth',4)
+ylim([175 360])
+xlim([0.022 0.05])
+grid on
+set(gca,'FontSize',18)
+xlabel('Time [s]', 'FontSize', 22)
+ylabel('Voltage [V]', 'FontSize', 22)
+title('Output voltage without notch filter during load step')
